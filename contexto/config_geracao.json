@@ -1,5 +1,5 @@
 {
-  "model": "llama3:8b",
+  "model": "qwen3:8b",
   "temperature": 0.85,
   "top_p": 0.95,
   "top_k": 40,
