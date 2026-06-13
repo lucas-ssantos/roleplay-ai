@@ -1,0 +1,22 @@
+Histórico completo da conversa
+         │
+         ▼
+┌─────────────────────┐
+│   contextService    │  ← conta tokens estimados
+└─────────┬───────────┘
+          │
+     Ultrapassa o limite?
+     /            \
+   NÃO            SIM
+    │               │
+    │        summaryService  ← resume as msgs antigas
+    │               │        e salva como memória
+    ▼               ▼
+┌─────────────────────────────────┐
+│         promptService           │
+│                                 │
+│  [System prompt do personagem]  │
+│  [Memórias relevantes]          │  ← injetadas aqui
+│  [World Info / Lorebook]        │
+│  [Últimas N mensagens]          │
+└─────────────────────────────────┘

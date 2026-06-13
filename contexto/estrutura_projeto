@@ -1,0 +1,46 @@
+roleplay-api/
+├── src/
+│   ├── config/
+│   │   ├── database.js
+│   │   ├── ollama.js
+│   │   └── defaults.js          # Defaults globais de geração
+│   │
+│   ├── controllers/
+│   │   ├── characterController.js
+│   │   ├── chatController.js
+│   │   ├── memoryController.js  # CRUD de memórias
+│   │   └── settingsController.js
+│   │
+│   ├── models/
+│   │   ├── Character.js
+│   │   ├── Conversation.js
+│   │   ├── Message.js
+│   │   ├── Memory.js            # Memórias do personagem/conversa
+│   │   └── Settings.js          # Configurações globais/por conversa
+│   │
+│   ├── routes/
+│   │   ├── characters.js
+│   │   ├── chat.js
+│   │   ├── memory.js
+│   │   └── settings.js
+│   │
+│   ├── services/
+│   │   ├── ollamaService.js         # Chamadas ao Ollama (stream + normal)
+│   │   ├── promptService.js         # Montagem do prompt final
+│   │   ├── memoryService.js         # Lógica de salvar/buscar memórias
+│   │   ├── contextService.js        # Gerencia janela de contexto
+│   │   └── summaryService.js        # Auto-sumariza histórico longo
+│   │
+│   ├── middleware/
+│   │   ├── errorHandler.js
+│   │   └── validator.js
+│   │
+│   └── app.js
+│
+├── data/
+│   └── roleplay.db
+│
+├── .env
+├── .gitignore
+├── package.json
+└── README.md
