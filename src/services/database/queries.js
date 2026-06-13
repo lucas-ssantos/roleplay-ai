@@ -164,6 +164,21 @@ export function addMessage(conversationId, role, content, position = null) {
   return id;
 }
 
+export function deleteLastAssistantMessage(conversationId) {
+  const db = getDB();
+  const result = db.exec(
+    `SELECT id, position FROM messages
+     WHERE conversation_id = ? AND role = 'assistant'
+     ORDER BY position DESC LIMIT 1`,
+    [conversationId]
+  );
+  if (result.length === 0 || result[0].values.length === 0) return null;
+  const [id, position] = result[0].values[0];
+  db.run(`DELETE FROM messages WHERE id = ?`, [id]);
+  saveDB();
+  return { id, position };
+}
+
 export function rollbackConversation(conversationId, messageId) {
   const db = getDB();
   const posResult = db.exec(

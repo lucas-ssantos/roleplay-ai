@@ -4,7 +4,7 @@ import path from "path";
 import { spawn } from "child_process";
 import { registerWebServer } from "../core/shutdown.js";
 import { getDB } from "./database/db.js";
-import { createCharacter, getAllCharacters, getCharacter, getPersona, savePersona, getGenerationConfig, setGenerationConfig, createConversation, getConversation, getLatestConversationForCharacter, getRecentCharactersWithConversations, addMessage, rollbackConversation, getConversationMessages, getLastNMessages } from "./database/queries.js";
+import { createCharacter, getAllCharacters, getCharacter, getPersona, savePersona, getGenerationConfig, setGenerationConfig, createConversation, getConversation, getLatestConversationForCharacter, getRecentCharactersWithConversations, addMessage, rollbackConversation, deleteLastAssistantMessage, getConversationMessages, getLastNMessages } from "./database/queries.js";
 
 async function getHealthStatus() {
     const status = {
@@ -605,6 +605,132 @@ export async function startWebServer(port = process.env.PORT || 3000)
                     res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
                     res.end();
                 } catch { /* ignore */ }
+            }
+        }
+    });
+
+    // ===== REGENERATE LAST ASSISTANT MESSAGE =====
+    app.post('/api/conversations/:id/regenerate', async (req, res) => {
+        const conversationId = req.params.id;
+        try {
+            const conv = getConversation(conversationId);
+            if (!conv) return res.status(404).json({ ok: false, message: 'Conversa não encontrada.' });
+
+            const character = getCharacter(conv.character_id);
+            if (!character) return res.status(404).json({ ok: false, message: 'Personagem não encontrado.' });
+
+            const persona = getPersona();
+            const globalConfig = getGenerationConfig('global');
+            const charConfig = getGenerationConfig('character', conv.character_id);
+            const config = {
+                model: 'qwen3:8b', temperature: 0.85, top_p: 0.95, top_k: 40, min_p: 0.05,
+                repeat_penalty: 1.1, repeat_last_n: 64, max_tokens: 512, context_size: 4096,
+                seed: -1, stop: [], num_ctx_messages: 20,
+                ...globalConfig, ...(charConfig?.model ? charConfig : {}),
+            };
+
+            const deleted = deleteLastAssistantMessage(conversationId);
+            if (!deleted) return res.status(400).json({ ok: false, message: 'Nenhuma mensagem do personagem para regenerar.' });
+
+            const recentMsgs = getLastNMessages(conversationId, config.num_ctx_messages || 20);
+
+            const systemParts = [];
+            systemParts.push(character.description ? `You are ${character.name}. ${character.description}` : `You are ${character.name}.`);
+            if (character.personality) systemParts.push(`Personality: ${character.personality}`);
+            if (character.scenario) systemParts.push(`Scenario: ${character.scenario}`);
+            if (persona?.name) systemParts.push(`The user's name is ${persona.name}.${persona.description ? ' ' + persona.description : ''}`);
+            systemParts.push(`Respond in first person as ${character.name}. Stay in character at all times. Be engaging and immersive.`);
+            const systemPrompt = systemParts.join('\n\n');
+
+            const ollamaMessages = [{ role: 'system', content: systemPrompt }];
+            for (const msg of recentMsgs) {
+                if (msg.role === 'system') continue;
+                ollamaMessages.push({ role: msg.role, content: msg.content });
+            }
+
+            res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
+            res.flushHeaders();
+
+            const ollamaRes = await fetch('http://127.0.0.1:11434/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: config.model || 'qwen3:8b',
+                    messages: ollamaMessages,
+                    stream: true,
+                    options: {
+                        temperature: config.temperature, top_p: config.top_p, top_k: config.top_k,
+                        min_p: config.min_p, repeat_penalty: config.repeat_penalty,
+                        repeat_last_n: config.repeat_last_n, num_ctx: config.context_size,
+                        num_predict: config.max_tokens,
+                        seed: (config.seed !== -1 && config.seed != null) ? config.seed : undefined,
+                        stop: config.stop?.length ? config.stop : undefined,
+                    },
+                }),
+            });
+
+            if (!ollamaRes.ok) {
+                const errText = await ollamaRes.text();
+                res.write(`data: ${JSON.stringify({ error: `Ollama: ${ollamaRes.status} — ${errText}` })}\n\n`);
+                res.end(); return;
+            }
+
+            let fullContent = '';
+            let inThink = false;
+            const reader = ollamaRes.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    let parsed;
+                    try { parsed = JSON.parse(line); } catch { continue; }
+
+                    if (parsed.message?.content) {
+                        let delta = parsed.message.content;
+                        if (inThink) {
+                            const endIdx = delta.indexOf('</think>');
+                            if (endIdx !== -1) { inThink = false; delta = delta.slice(endIdx + 8); }
+                            else continue;
+                        }
+                        while (delta.includes('<think>')) {
+                            const startIdx = delta.indexOf('<think>');
+                            const before = delta.slice(0, startIdx);
+                            if (before) { fullContent += before; res.write(`data: ${JSON.stringify({ delta: before, done: false })}\n\n`); }
+                            const endIdx = delta.indexOf('</think>', startIdx);
+                            if (endIdx !== -1) { delta = delta.slice(endIdx + 8); }
+                            else { inThink = true; delta = ''; }
+                        }
+                        if (delta) { fullContent += delta; res.write(`data: ${JSON.stringify({ delta, done: false })}\n\n`); }
+                    }
+
+                    if (parsed.done) {
+                        const asstMsgId = fullContent ? addMessage(conversationId, 'assistant', fullContent, deleted.position) : null;
+                        res.write(`data: ${JSON.stringify({ delta: '', done: true, message_id: asstMsgId })}\n\n`);
+                        res.end(); return;
+                    }
+                }
+            }
+
+            if (fullContent) {
+                const asstMsgId = addMessage(conversationId, 'assistant', fullContent, deleted.position);
+                res.write(`data: ${JSON.stringify({ delta: '', done: true, message_id: asstMsgId })}\n\n`);
+            }
+            res.end();
+
+        } catch (err) {
+            console.error('Regenerate error:', err);
+            if (!res.headersSent) {
+                res.status(500).json({ ok: false, message: err.message });
+            } else {
+                try { res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`); res.end(); } catch { /* ignore */ }
             }
         }
     });
