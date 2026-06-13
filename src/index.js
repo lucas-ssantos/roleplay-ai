@@ -12,6 +12,7 @@ async function main() {
     try {
 
         console.log("\n=== Starting OpenRP AI ===\n");
+        await initOllama();
 
 
     }
