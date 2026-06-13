@@ -252,6 +252,12 @@
         pointer-events: none;
       }
 
+      /* ── Action text *between asterisks* ── */
+      .action-text {
+        font-style: italic;
+        opacity: 0.58;
+      }
+
       /* ── Typing indicator ── */
       .typing-bubble {
         display: flex;
@@ -682,14 +688,6 @@
 
     <div class="chat-layout">
       <header class="chat-header">
-        <a class="back-btn" href="/" title="Voltar">
-          <i class="bi bi-chevron-left" style="font-size:1.05rem;"></i>
-        </a>
-        <img class="header-avatar" id="header-avatar" alt="" />
-        <div class="header-info">
-          <div class="header-name" id="char-name">Carregando…</div>
-          <div class="header-scenario" id="char-scenario"></div>
-        </div>
         <button class="menu-btn"
                 data-bs-toggle="offcanvas"
                 data-bs-target="#chatNav"
@@ -697,6 +695,14 @@
                 aria-label="Abrir menu">
           <i class="bi bi-list" style="font-size:1.15rem;"></i>
         </button>
+        <img class="header-avatar" id="header-avatar" alt="" />
+        <div class="header-info">
+          <div class="header-name" id="char-name">Carregando…</div>
+          <div class="header-scenario" id="char-scenario"></div>
+        </div>
+        <a class="back-btn" href="/" title="Voltar">
+          <i class="bi bi-chevron-left" style="font-size:1.05rem;"></i>
+        </a>
       </header>
 
       <main class="messages" id="messages"></main>
@@ -736,6 +742,14 @@
         messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
       }
 
+      function renderBubbleText(el, text) {
+        const escaped = text
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+        el.innerHTML = escaped.replace(/\*([^*]+)\*/g, '<em class="action-text">$1</em>');
+      }
+
       function addBubble(role, content, messageId = null) {
         const isUser = role === 'user';
         const row = document.createElement('div');
@@ -746,7 +760,7 @@
 
         const textEl = document.createElement('span');
         textEl.className = 'bubble-text';
-        textEl.textContent = content;
+        renderBubbleText(textEl, content);
         bubble.appendChild(textEl);
         row.appendChild(bubble);
 
@@ -852,7 +866,7 @@
                   bubble.appendChild(newTextEl);
                 }
                 newContent += data.delta;
-                newTextEl.textContent = newContent;
+                renderBubbleText(newTextEl, newContent);
                 scrollToBottom();
               }
 
@@ -971,6 +985,7 @@
 
         let charRow = null;
         let charText = null;
+        let charRawText = '';
 
         try {
           const res = await fetch(`/api/conversations/${conversationId}/messages`, {
@@ -1017,7 +1032,8 @@
                   charRow = b.row;
                   charText = b.textEl;
                 }
-                charText.textContent += data.delta;
+                charRawText += data.delta;
+                renderBubbleText(charText, charRawText);
                 scrollToBottom();
               }
 
