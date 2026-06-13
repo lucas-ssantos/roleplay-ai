@@ -1,273 +1,107 @@
-# Roleplay AI
+# OpenRP AI — Plataforma Local de Roleplay (Web + Chat)
 
-A local-first Roleplay and Chat AI platform powered by Ollama and Node.js.
+OpenRP AI é uma aplicação local para chat e roleplay com IA utilizando modelos do Ollama, inspirada por TalkieAI, LinkyAI, SillyTavern e TavernAI. O foco é oferecer uma plataforma que rode no navegador, mantendo todos os dados e modelos localmente: sem login centralizado, sem funcionalidades de compartilhamento online e essas baboseiras e ser refem de empresas.
 
-The goal of this project is to create a system similar to TalkieAI, LinkyAI and SillyTavern, featuring:
+Principais características:
 
-* Character cards
-* Persistent chat history
-* Memories and summaries
-* Configurable generation presets
-* Character-specific overrides
-* Local models through Ollama
-* REST API first
-* Future Web Client
+- Cartões de personagem (nome, display name, descrição, personalidade, avatar)
+- Histórico persistente de conversas
+- Memórias e resumos automáticos
+- Configurações de geração (globais e por personagem)
+- Integração com modelos locais via Ollama
+- Frontend web servido localmente pela aplicação (SPA)
 
----
+## Requisitos
 
-## Features
+- Node.js 20 ou superior
+- Ollama (daemon local com API)
+- Linux (recomendado com systemd)
 
-### Characters
+## Instalação rápida
 
-* Name
-* Display name
-* Avatar
-* Description
-* Personality
-* Scenario
-* First message
-* Example dialogues
-* Tags
-* Creator notes
+1) Instale o Node.js (recomendado usar `nvm`):
 
-Characters can optionally override global generation settings.
-
----
-
-### Generation Settings
-
-Global settings:
-
-* temperature
-* top_p
-* top_k
-* min_p
-* repeat_penalty
-* num_ctx
-* max_tokens
-* stream
-* history_messages
-* memory_messages
-* summary_interval
-
-Character-specific overrides are supported.
-
----
-
-### Chats
-
-* Persistent conversations
-* Multiple chats per character
-* Automatic summaries
-* Message history
-* Token counting
-
----
-
-### Memories
-
-Memories are stored independently from messages.
-
-Examples:
-
-* User likes rock music.
-* User has a black cat.
-* Character and user met at a tavern.
-
-Memories can later evolve into semantic search using embeddings.
-
----
-
-## Architecture
-
-```text
-User Message
-
-↓
-
-Memory Service
-
-↓
-
-Summary Service
-
-↓
-
-Context Builder
-
-↓
-
-Message Builder
-
-↓
-
-Ollama Service
-
-↓
-
-Response
-
-↓
-
-Database
+```bash
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \ . "$NVM_DIR/nvm.sh"
+nvm install 20
+nvm use 20
 ```
 
----
+2) Instale dependências do projeto:
 
-## Project Structure
-
-```text
-src/
-
-├── api/
-│   ├── routes/
-│   ├── controllers/
-│   └── middlewares/
-│
-
-├── builders/
-│   ├── context.builder.js
-│   ├── message.builder.js
-│   └── prompt.builder.js
-│
-
-├── core/
-│   ├── ollama.init.js
-│   └── shutdown.js
-│
-
-├── database/
-│   ├── db.js
-│   ├── migrations.js
-│   └── save.js
-│
-
-├── services/
-│   ├── ollama.service.js
-│   ├── memory.service.js
-│   ├── summary.service.js
-│   └── settings.service.js
-│
-
-└── index.js
+```bash
+npm install
 ```
 
----
+3) Instale o Ollama e habilite o serviço (exemplos):
 
-## Data Directory
-
-All persistent files are stored inside:
-
-```text
-/data
-
-database.sqlite
-
-characters/
-
-lorebooks/
-
-uploads/
-
-vectors/
-```
-
----
-
-## Requirements
-
-* Node.js >= 20
-* Ollama
-* Linux with systemd
-
----
-
-## Installing Ollama
-
-Arch Linux:
+- Leia a documentação oficial em https://ollama.com para instruções atualizadas.
+- Em Arch Linux:
 
 ```bash
 sudo pacman -S ollama
+sudo systemctl enable --now ollama
 ```
 
-or
+Se preferir, use um instalador oficial disponibilizado pela equipe do Ollama — o passo acima é um exemplo para Arch.
+
+4) Verifique se a API do Ollama está respondendo:
 
 ```bash
-yay -S ollama
+curl -sS http://127.0.0.1:11434/api/tags
 ```
 
-Enable service:
+Se receber uma resposta HTTP 200, a API está pronta.
+
+## Como iniciar a aplicação localmente
 
 ```bash
-sudo systemctl enable ollama
-
-sudo systemctl start ollama
+npm start
 ```
 
----
+Por padrão a aplicação (backend + frontend) escutará em `http://0.0.0.0:3000` (ou `PORT` definido em variáveis de ambiente). Após iniciar, abra o navegador em:
 
-## Startup Flow
-
-When the application starts:
-
-1. Check if Ollama is installed.
-2. Verify if the Ollama service is running.
-3. Attempt to start Ollama if needed.
-4. Verify the API at:
-
-```text
-http://127.0.0.1:11434/api/tags
+```
+http://localhost:3000
 ```
 
-5. Initialize database.
-6. Run migrations.
-7. Start REST API.
+## Privacidade e design local
 
-If any step fails, the application exits.
+Este projeto foi pensado para ser totalmente local: nenhum dado é enviado por padrão para serviços remotos ou compartilhado entre usuários. Os modelos são executados localmente via Ollama, e os arquivos permanecem na máquina do usuário.
 
----
+## Uso e desenvolvimento
 
-## Shutdown Flow
+- Rodar em modo de desenvolvimento (backend + watcher):
 
-When the application receives:
+```bash
+npm run dev
+```
 
-* CTRL+C (`SIGINT`)
-* `SIGTERM`
-* `uncaughtException`
-* `unhandledRejection`
+- Comandos úteis (definidos em `package.json`):
 
-the system:
+- `npm start` — inicia a aplicação (backend + serve frontend se existir)
+- `npm run dev` — inicia em modo watch
 
-1. Saves the database.
-2. Stops the Ollama service.
-3. Closes all resources.
-4. Exits safely.
+## Ajuda / Troubleshooting
 
----
+- Se a verificação do Ollama falhar, veja os logs do systemd:
 
-## Future Plans
+```bash
+sudo journalctl -u ollama -f
+```
 
-* Web UI
-* Lorebooks
-* Vector embeddings
-* Semantic memory search
-* Multi-character chats
-* Group chats
-* TTS/STT
-* Image generation
-* OpenAI-compatible API
-* WebSocket streaming
-* Mobile client
+- Confirme que a porta `11434` está acessível localmente.
+
+## Futuro
+
+O projeto pretende manter foco em chat/roleplay local, com planos para:
+
+- Web UI local
+- Memórias semânticas e vetores
+- Suporte a múltiplos personagens e chats
 
 ---
 
-## Inspiration
-
-This project is inspired by:
-
-* TalkieAI
-* LinkyAI
-* SillyTavern
-* TavernAI
-
-but aims to provide a fully local-first experience powered by Ollama.
+Contribuições e melhorias são bem-vindas, mas o objetivo principal é garantir uma experiência local, privada e simples de usar.
