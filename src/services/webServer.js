@@ -80,6 +80,18 @@ export async function startWebServer(port = process.env.PORT || 3000)
     });
 
     //GET PERSONA
+    app.get("/api/persona", (_req, res) => {
+        try {
+            const persona = getPersona();
+            if (!persona) {
+                return res.status(404).json({ ok: false, message: 'Persona não encontrada.' });
+            }
+            res.json({ ok: true, persona });
+        } catch (err) {
+            res.status(500).json({ ok: false, message: err.message });
+        }
+    });
+
     app.post("/api/persona", (req, res) => {
         try {
             const { name, description, avatar_url } = req.body;
