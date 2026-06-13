@@ -108,15 +108,19 @@ export async function migrate() {
   db.run(`
     CREATE TABLE IF NOT EXISTS generation_config (
       id TEXT PRIMARY KEY DEFAULT 'global',
-      model TEXT NOT NULL DEFAULT 'llama2:7b',
+      model TEXT NOT NULL DEFAULT 'qwen3:8b',
       temperature REAL DEFAULT 0.85,
       top_p REAL DEFAULT 0.95,
       top_k INTEGER DEFAULT 40,
       min_p REAL DEFAULT 0.05,
       repeat_penalty REAL DEFAULT 1.1,
+      repeat_last_n INTEGER DEFAULT 64,
+      tfs_z REAL DEFAULT 1.0,
       max_tokens INTEGER DEFAULT 512,
       context_size INTEGER DEFAULT 4096,
       stream INTEGER DEFAULT 1,
+      seed INTEGER DEFAULT -1,
+      stop TEXT,
       num_ctx_messages INTEGER DEFAULT 20,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

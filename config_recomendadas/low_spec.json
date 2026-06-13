@@ -1,5 +1,5 @@
 {
-  "model": "qwen3:8b:q2_k",
+  "model": "qwen3:4b",
   "temperature": 0.88,
   "top_p": 0.88,
   "top_k": 45,
