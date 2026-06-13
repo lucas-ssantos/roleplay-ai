@@ -1,7 +1,7 @@
-import { initOllama } from "./core/ollama.init.js";
-import { initDB } from "./database/db.js";
-import { migrate } from "./database/migrations.js";
-import { saveDB } from "./database/save.js";
+import { initOllama } from "./services/ollama.init.js";
+import { initDB } from "./services/database/db.js";
+import { migrate } from "./services/database/migrations.js";
+import { saveDB } from "./services/database/save.js";
 import { shutdown } from "./core/shutdown.js";
 
 async function main() {

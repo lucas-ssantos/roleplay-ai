@@ -1,4 +1,4 @@
-import { saveDB } from "../database/save.js";
+import { saveDB } from "../services/database/save.js";
 
 import { exec } from "child_process";
 import { promisify } from "util";
