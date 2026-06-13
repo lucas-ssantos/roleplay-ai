@@ -91,12 +91,16 @@ export async function shutdown(code = 0)
         }
 
         // Save database before shutdown
-        if (_saveDB) {
+        if(_saveDB)
+        {
             console.log("Saving database...");
-            try {
+            try
+            {
                 _saveDB();
                 console.log("Database saved successfully");
-            } catch (e) {
+            }
+            catch (e)
+            {
                 console.error("Error saving database:", e);
             }
         }
