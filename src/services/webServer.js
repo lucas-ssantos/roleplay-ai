@@ -4,7 +4,7 @@ import path from "path";
 import { spawn } from "child_process";
 import { registerWebServer } from "../core/shutdown.js";
 import { getDB } from "./database/db.js";
-import { createCharacter, getAllCharacters, getCharacter, getPersona, savePersona, getGenerationConfig, setGenerationConfig, createConversation, getConversation, getLatestConversationForCharacter, getRecentCharactersWithConversations, addMessage, getConversationMessages, getLastNMessages } from "./database/queries.js";
+import { createCharacter, getAllCharacters, getCharacter, getPersona, savePersona, getGenerationConfig, setGenerationConfig, createConversation, getConversation, getLatestConversationForCharacter, getRecentCharactersWithConversations, addMessage, rollbackConversation, getConversationMessages, getLastNMessages } from "./database/queries.js";
 
 async function getHealthStatus() {
     const status = {
@@ -489,7 +489,7 @@ export async function startWebServer(port = process.env.PORT || 3000)
             ollamaMessages.push({ role: 'user', content: content.trim() });
 
             const nextPos = recentMsgs.length > 0 ? (recentMsgs[recentMsgs.length - 1].position ?? recentMsgs.length) + 1 : 1;
-            addMessage(conversationId, 'user', content.trim(), nextPos);
+            const userMsgId = addMessage(conversationId, 'user', content.trim(), nextPos);
 
             res.set({
                 'Content-Type': 'text/event-stream',
@@ -583,7 +583,7 @@ export async function startWebServer(port = process.env.PORT || 3000)
 
                     if (parsed.done) {
                         const asstMsgId = fullContent ? addMessage(conversationId, 'assistant', fullContent, nextPos + 1) : null;
-                        res.write(`data: ${JSON.stringify({ delta: '', done: true, message_id: asstMsgId })}\n\n`);
+                        res.write(`data: ${JSON.stringify({ delta: '', done: true, message_id: asstMsgId, user_message_id: userMsgId })}\n\n`);
                         res.end();
                         return;
                     }
@@ -592,7 +592,7 @@ export async function startWebServer(port = process.env.PORT || 3000)
 
             if (fullContent) {
                 const asstMsgId = addMessage(conversationId, 'assistant', fullContent, nextPos + 1);
-                res.write(`data: ${JSON.stringify({ delta: '', done: true, message_id: asstMsgId })}\n\n`);
+                res.write(`data: ${JSON.stringify({ delta: '', done: true, message_id: asstMsgId, user_message_id: userMsgId })}\n\n`);
             }
             res.end();
 
@@ -606,6 +606,19 @@ export async function startWebServer(port = process.env.PORT || 3000)
                     res.end();
                 } catch { /* ignore */ }
             }
+        }
+    });
+
+    // ===== ROLLBACK CONVERSATION =====
+    app.delete('/api/conversations/:id/rollback', (req, res) => {
+        try {
+            const { messageId } = req.body;
+            if (!messageId) return res.status(400).json({ ok: false, message: 'messageId é obrigatório.' });
+            const ok = rollbackConversation(req.params.id, messageId);
+            if (!ok) return res.status(404).json({ ok: false, message: 'Mensagem não encontrada.' });
+            res.json({ ok: true });
+        } catch (err) {
+            res.status(500).json({ ok: false, message: err.message });
         }
     });
 

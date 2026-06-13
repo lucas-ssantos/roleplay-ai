@@ -137,15 +137,26 @@
         flex: 1 0 0;
       }
 
+      /* ── Message row (bubble + rollback btn) ── */
+      .msg-row {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        max-width: min(82%, 580px);
+        animation: fadeSlide 0.22s ease both;
+      }
+
+      .msg-row-char { align-self: flex-start; }
+      .msg-row-user { align-self: flex-end; flex-direction: row-reverse; }
+
       /* ── Bubbles ── */
       .bubble {
-        max-width: min(78%, 560px);
         padding: 0.8rem 1.1rem;
         line-height: 1.65;
         font-size: 0.95rem;
         word-break: break-word;
         white-space: pre-wrap;
-        animation: fadeSlide 0.22s ease both;
+        min-width: 0;
       }
 
       @keyframes fadeSlide {
@@ -160,7 +171,6 @@
       }
 
       .bubble-char {
-        align-self: flex-start;
         background: rgba(15, 23, 42, 0.78);
         backdrop-filter: blur(14px);
         -webkit-backdrop-filter: blur(14px);
@@ -170,11 +180,40 @@
       }
 
       .bubble-user {
-        align-self: flex-end;
         background: rgba(56, 189, 248, 0.88);
         color: #020617;
         border-radius: 1.25rem 1.25rem 0 1.25rem;
         font-weight: 500;
+      }
+
+      /* ── Rollback button ── */
+      .rollback-btn {
+        flex-shrink: 0;
+        width: 1.65rem;
+        height: 1.65rem;
+        border-radius: 50%;
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #64748b;
+        font-size: 0.78rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.18s, background 0.18s, color 0.18s, border-color 0.18s;
+      }
+
+      .msg-row:hover .rollback-btn {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .rollback-btn:hover {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.4);
+        color: #fca5a5;
       }
 
       /* ── Typing indicator ── */
@@ -571,6 +610,37 @@
       </div>
     </div>
 
+    <!-- ── Rollback confirmation modal ──────────────────────────────── -->
+    <div class="modal fade" id="rollbackModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered" style="max-width:360px;">
+        <div class="modal-content" style="background:rgba(6,12,30,0.98); border:1px solid rgba(148,163,184,0.15); border-radius:1.1rem;">
+          <div class="modal-header" style="border-bottom:1px solid rgba(148,163,184,0.1); padding:1.1rem 1.25rem .85rem;">
+            <h6 class="modal-title mb-0" style="color:#f1f5f9; font-weight:700; font-size:.95rem;">
+              <i class="bi bi-arrow-counterclockwise me-2" style="color:#f87171;"></i>Retroceder mensagem
+            </h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="font-size:.8rem;"></button>
+          </div>
+          <div class="modal-body" style="color:#94a3b8; font-size:.88rem; line-height:1.65; padding:1.1rem 1.25rem;">
+            <p class="mb-2">Deseja retroceder a esta mensagem?</p>
+            <p class="mb-0" style="color:#fca5a5; font-size:.82rem;">
+              <i class="bi bi-exclamation-triangle me-1"></i>
+              Esta ação é <strong style="color:#f87171;">irreversível</strong>. Todas as mensagens mais recentes serão apagadas permanentemente.
+            </p>
+          </div>
+          <div class="modal-footer" style="border-top:1px solid rgba(148,163,184,0.1); padding:.85rem 1.25rem; gap:.5rem;">
+            <button type="button" data-bs-dismiss="modal"
+                    style="background:rgba(30,41,59,.7); border:1px solid rgba(148,163,184,.2); color:#cbd5e1; border-radius:.75rem; padding:.35rem .9rem; font-size:.85rem; cursor:pointer;">
+              Cancelar
+            </button>
+            <button type="button" id="rollback-confirm-btn"
+                    style="background:rgba(239,68,68,.18); border:1px solid rgba(239,68,68,.4); color:#fca5a5; border-radius:.75rem; padding:.35rem .9rem; font-size:.85rem; cursor:pointer;">
+              <i class="bi bi-arrow-counterclockwise me-1"></i>Retroceder
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="bg" id="bg"></div>
     <div class="bg-overlay"></div>
 
@@ -630,13 +700,75 @@
         messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
       }
 
-      function addBubble(role, content) {
-        const el = document.createElement('div');
-        el.className = `bubble bubble-${role === 'user' ? 'user' : 'char'}`;
-        el.textContent = content;
-        messagesEl.appendChild(el);
+      function addBubble(role, content, messageId = null) {
+        const isUser = role === 'user';
+        const row = document.createElement('div');
+        row.className = `msg-row msg-row-${isUser ? 'user' : 'char'}`;
+
+        const bubble = document.createElement('div');
+        bubble.className = `bubble bubble-${isUser ? 'user' : 'char'}`;
+
+        const textEl = document.createElement('span');
+        textEl.className = 'bubble-text';
+        textEl.textContent = content;
+        bubble.appendChild(textEl);
+        row.appendChild(bubble);
+
+        if (messageId) attachRollbackBtn(row, messageId);
+
+        messagesEl.appendChild(row);
         scrollToBottom();
-        return el;
+        return { row, textEl };
+      }
+
+      function attachRollbackBtn(row, messageId) {
+        const btn = document.createElement('button');
+        btn.className = 'rollback-btn';
+        btn.title = 'Retroceder a esta mensagem';
+        btn.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openRollbackModal(messageId, row);
+        });
+        row.appendChild(btn);
+      }
+
+      // ── Rollback modal ────────────────────────────────────────────────────
+
+      let rollbackModal;
+      let rollbackTargetId = null;
+      let rollbackTargetRow = null;
+
+      function openRollbackModal(messageId, rowEl) {
+        rollbackTargetId = messageId;
+        rollbackTargetRow = rowEl;
+        rollbackModal.show();
+      }
+
+      function initRollbackModal() {
+        rollbackModal = new bootstrap.Modal(document.getElementById('rollbackModal'));
+        document.getElementById('rollback-confirm-btn').addEventListener('click', async () => {
+          if (!rollbackTargetId || !conversationId) return;
+          rollbackModal.hide();
+          try {
+            const res = await fetch(`/api/conversations/${conversationId}/rollback`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ messageId: rollbackTargetId }),
+            });
+            const data = await res.json();
+            if (!data.ok) throw new Error(data.message);
+
+            const rows = [...messagesEl.querySelectorAll('.msg-row')];
+            const idx = rows.indexOf(rollbackTargetRow);
+            if (idx !== -1) rows.slice(idx + 1).forEach(r => r.remove());
+          } catch (err) {
+            showError(`Erro ao retroceder: ${err.message}`);
+          } finally {
+            rollbackTargetId = null;
+            rollbackTargetRow = null;
+          }
+        });
       }
 
       function addTypingIndicator() {
@@ -689,13 +821,14 @@
 
         inputEl.value = '';
         autoResize();
-        addBubble('user', content);
+        const { row: userRow } = addBubble('user', content);
         addTypingIndicator();
 
         isStreaming = true;
         setInputEnabled(false);
 
-        let charBubble = null;
+        let charRow = null;
+        let charText = null;
 
         try {
           const res = await fetch(`/api/conversations/${conversationId}/messages`, {
@@ -736,18 +869,25 @@
               }
 
               if (data.delta) {
-                if (!charBubble) {
+                if (!charText) {
                   removeTypingIndicator();
-                  charBubble = addBubble('assistant', '');
+                  const b = addBubble('assistant', '');
+                  charRow = b.row;
+                  charText = b.textEl;
                 }
-                charBubble.textContent += data.delta;
+                charText.textContent += data.delta;
                 scrollToBottom();
+              }
+
+              if (data.done) {
+                if (data.message_id && charRow) attachRollbackBtn(charRow, data.message_id);
+                if (data.user_message_id && userRow) attachRollbackBtn(userRow, data.user_message_id);
               }
             }
           }
         } catch (err) {
           removeTypingIndicator();
-          charBubble?.remove();
+          charRow?.remove();
           showError(`Erro: ${err.message}`);
         } finally {
           removeTypingIndicator();
@@ -813,7 +953,7 @@
           if (msgsData.ok) {
             for (const msg of msgsData.messages) {
               if (msg.role === 'system') continue;
-              addBubble(msg.role, msg.content);
+              addBubble(msg.role, msg.content, msg.id);
             }
           }
 
@@ -826,7 +966,10 @@
         }
       }
 
-      window.addEventListener('load', init);
+      window.addEventListener('load', () => {
+        initRollbackModal();
+        init();
+      });
     </script>
   </body>
 </html>

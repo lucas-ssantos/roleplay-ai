@@ -164,6 +164,22 @@ export function addMessage(conversationId, role, content, position = null) {
   return id;
 }
 
+export function rollbackConversation(conversationId, messageId) {
+  const db = getDB();
+  const posResult = db.exec(
+    `SELECT position FROM messages WHERE id = ? AND conversation_id = ?`,
+    [messageId, conversationId]
+  );
+  if (posResult.length === 0 || posResult[0].values.length === 0) return false;
+  const position = posResult[0].values[0][0];
+  db.run(
+    `DELETE FROM messages WHERE conversation_id = ? AND position > ?`,
+    [conversationId, position]
+  );
+  saveDB();
+  return true;
+}
+
 export function getConversationMessages(conversationId) {
   const db = getDB();
   const result = db.exec(
