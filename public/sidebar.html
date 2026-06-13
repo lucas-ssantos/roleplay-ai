@@ -1,0 +1,100 @@
+<style>
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+    gap: 1.5rem;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 1.5rem;
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    min-height: calc(100vh - 4rem);
+  }
+
+  .sidebar h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    letter-spacing: -0.03em;
+    color: #f8fafc;
+  }
+
+  .nav-links {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .nav-links a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.95rem 1rem;
+    border-radius: 1rem;
+    text-decoration: none;
+    color: #e2e8f0;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid transparent;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+
+  .nav-links a:hover,
+  .nav-links a.active {
+    background: rgba(56, 189, 248, 0.16);
+    border-color: rgba(56, 189, 248, 0.3);
+    color: #f8fafc;
+  }
+
+  .nav-links a span {
+    font-size: 0.95rem;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .main-content {
+    min-width: 0;
+  }
+
+  @media (max-width: 900px) {
+    .layout {
+      display: block;
+    }
+
+    .sidebar {
+      min-height: auto;
+      width: 100%;
+      padding: 1.5rem;
+    }
+
+    .main-content {
+      width: 100%;
+    }
+  }
+</style>
+<aside class="sidebar">
+  <h2>Menu</h2>
+  <nav class="nav-links">
+    <a href="/" data-path="/">
+      <span>Personagens</span>
+    </a>
+    <a href="/persona" data-path="/persona">
+      <span>Persona</span>
+    </a>
+    <a href="/api/viewdb" data-path="/api/viewdb">
+      <span>Data Base</span>
+    </a>
+  </nav>
+  <p class="sidebar-footer">Use este menu para navegar entre a lista de personagens, a persona e a visualização de banco de dados.</p>
+</aside>

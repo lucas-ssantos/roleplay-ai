@@ -22,6 +22,14 @@
           #0b1120;
         padding: 2rem;
       }
+      .layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 1.5rem;
+      }
+      .main-content {
+        min-width: 0;
+      }
       .page {
         width: min(1200px, 100%);
         margin: 0 auto;
@@ -126,9 +134,12 @@
     </style>
   </head>
   <body>
-    <div class="page">
-      <div class="card">
-        <h1>Visualizador de Banco de Dados</h1>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <div class="page">
+          <div class="card">
+            <h1>Visualizador de Banco de Dados</h1>
         <p>Acesse tabelas e veja até os 25 últimos registros em cada lista.</p>
         <div class="status" id="status">Carregando tabelas...</div>
       </div>
@@ -251,7 +262,23 @@
         }
       }
 
-      init();
+      async function loadSidebar() {
+        const sidebar = await fetch('/sidebar.html');
+        const html = await sidebar.text();
+        document.getElementById('sidebar-root').innerHTML = html;
+        document.querySelectorAll('.nav-links a').forEach((link) => {
+          if (link.dataset.path === window.location.pathname) {
+            link.classList.add('active');
+          }
+        });
+      }
+
+      window.addEventListener('load', async () => {
+        await loadSidebar();
+        init();
+      });
     </script>
+  </main>
+</div>
   </body>
 </html>

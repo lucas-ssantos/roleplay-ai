@@ -22,9 +22,17 @@
         background: radial-gradient(circle at top, rgba(56, 189, 248, 0.12), transparent 30%),
           radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.12), transparent 28%),
           #020617;
-        display: flex;
-        justify-content: center;
         padding: 2rem;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 1.5rem;
+      }
+
+      .main-content {
+        min-width: 0;
       }
 
       .page {
@@ -53,31 +61,59 @@
 
       .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.25rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.3rem;
       }
 
       .card {
         background: rgba(15, 23, 42, 0.95);
         border: 1px solid rgba(148, 163, 184, 0.12);
         border-radius: 1.25rem;
-        padding: 1.4rem;
-        min-height: 220px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        transition: transform 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
       }
 
       .card:hover {
-        transform: translateY(-3px);
+        transform: translateY(-4px);
         border-color: rgba(56, 189, 248, 0.35);
         background: rgba(15, 23, 42, 1);
       }
 
+      .card-figure {
+        position: relative;
+        min-height: 180px;
+        aspect-ratio: 4 / 3;
+        background: linear-gradient(180deg, rgba(56, 189, 248, 0.14), rgba(15, 23, 42, 0.9));
+      }
+
+      .card-figure img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .card-figure.placeholder {
+        display: grid;
+        place-items: center;
+        color: #94a3b8;
+        font-size: 0.95rem;
+        padding: 1rem;
+      }
+
+      .card-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 1.4rem;
+        min-height: 220px;
+      }
+
       .card-title {
-        font-size: 1.15rem;
-        margin: 0 0 0.5rem;
+        font-size: 1.18rem;
+        margin: 0 0 0.35rem;
       }
 
       .card-subtitle {
@@ -111,6 +147,24 @@
         font-size: 0.82rem;
       }
 
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.45rem 0.7rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+      }
+
+      .status-ok {
+        background: rgba(34, 197, 94, 0.12);
+        color: #86efac;
+      }
+
+      .status-error {
+        background: rgba(248, 113, 113, 0.14);
+        color: #fecaca;
+      }
+
       .card-add {
         display: grid;
         place-items: center;
@@ -118,6 +172,7 @@
         gap: 1rem;
         border-style: dashed;
         color: #38bdf8;
+        min-height: 320px;
       }
 
       .card-add:hover {
@@ -136,28 +191,33 @@
         background: rgba(56, 189, 248, 0.08);
       }
 
-      .status-pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.45rem 0.7rem;
-        border-radius: 999px;
-        font-size: 0.85rem;
+      @media (max-width: 900px) {
+        .card-content {
+          padding: 1.25rem;
+        }
       }
 
-      .status-ok {
-        background: rgba(34, 197, 94, 0.12);
-        color: #86efac;
-      }
+      @media (max-width: 640px) {
+        body {
+          padding: 1rem;
+        }
 
-      .status-error {
-        background: rgba(248, 113, 113, 0.14);
-        color: #fecaca;
+        .page {
+          width: 100%;
+        }
+
+        .card-add {
+          min-height: 280px;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="page">
-      <div class="header">
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <div class="page">
+          <div class="header">
         <div>
           <h1>Personagens</h1>
           <p>Selecione um personagem para começar a conversa ou adicione um novo perfil à sua coleção.</p>
@@ -198,14 +258,21 @@
               const card = document.createElement('article');
               card.className = 'card';
               card.innerHTML = `
-                <div>
-                  <h2 class="card-title">${character.display_name || character.name}</h2>
-                  <p class="card-subtitle">${character.description || 'Sem descrição disponível.'}</p>
+                <div class="card-figure">
+                  ${character.avatar_url
+                    ? `<img src="${character.avatar_url}" alt="Avatar de ${character.display_name || character.name}" />`
+                    : `<div class="card-figure placeholder">Sem imagem disponível</div>`}
                 </div>
-                <div class="card-body">${character.personality || 'Personalidade não definida.'}</div>
-                <div class="card-meta">
-                  <span class="badge">${character.name}</span>
-                  <span class="status-pill status-ok">Pronto</span>
+                <div class="card-content">
+                  <div>
+                    <h2 class="card-title">${character.display_name || character.name}</h2>
+                    <p class="card-subtitle">${character.description || 'Sem descrição disponível.'}</p>
+                  </div>
+                  <div class="card-body">${character.personality || 'Personalidade não definida.'}</div>
+                  <div class="card-meta">
+                    <span class="badge">${character.name}</span>
+                    <span class="status-pill status-ok">Pronto</span>
+                  </div>
                 </div>
               `;
               grid.appendChild(card);
@@ -222,7 +289,23 @@
         alert('Funcionalidade de criação será implementada em breve.');
       }
 
-      window.addEventListener('load', loadCharacters);
+      async function loadSidebar() {
+        const sidebar = await fetch('/sidebar.html');
+        const html = await sidebar.text();
+        document.getElementById('sidebar-root').innerHTML = html;
+        document.querySelectorAll('.nav-links a').forEach((link) => {
+          if (link.dataset.path === window.location.pathname) {
+            link.classList.add('active');
+          }
+        });
+      }
+
+      window.addEventListener('load', async () => {
+        await loadSidebar();
+        loadCharacters();
+      });
     </script>
+  </main>
+</div>
   </body>
 </html>
