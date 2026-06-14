@@ -186,6 +186,15 @@
         font-weight: 500;
       }
 
+      /* ── Action buttons wrapper ── */
+      .msg-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        align-self: center;
+        flex-shrink: 0;
+      }
+
       /* ── Rollback button ── */
       .rollback-btn {
         flex-shrink: 0;
@@ -935,15 +944,18 @@
         bubble.appendChild(textEl);
         row.appendChild(bubble);
 
+        const actionsEl = document.createElement('div');
+        actionsEl.className = 'msg-actions';
+        row.appendChild(actionsEl);
+
         if (!isUser) {
-          // Add regenerate button (hidden until updateLastCharRow marks this as last)
           const regenBtn = document.createElement('button');
           regenBtn.className = 'regenerate-btn';
           regenBtn.title = 'Regenerar resposta';
           regenBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
           regenBtn.style.display = 'none';
           regenBtn.addEventListener('click', (e) => { e.stopPropagation(); regenerateLastMessage(row); });
-          row.appendChild(regenBtn);
+          actionsEl.appendChild(regenBtn);
         }
 
         if (messageId && !isUser) attachRollbackBtn(row, messageId);
@@ -976,7 +988,7 @@
           e.stopPropagation();
           openRollbackModal(messageId, row);
         });
-        row.appendChild(btn);
+        (row.querySelector('.msg-actions') ?? row).appendChild(btn);
       }
 
       // ── Regenerate last message ───────────────────────────────────────────
@@ -1198,7 +1210,7 @@
             editConfirmModal.show();
           }
         });
-        row.appendChild(btn);
+        (row.querySelector('.msg-actions') ?? row).appendChild(btn);
       }
 
       function addTypingIndicator() {
