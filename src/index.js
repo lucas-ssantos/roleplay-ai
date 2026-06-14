@@ -1,5 +1,5 @@
 import { initOllama } from "./services/ollama.init.js";
-import { startWebServer } from "./services/webServer.js";
+import { startWebServer } from "./services/webServer/webServer.init.js";
 import { shutdown, registerSaveDB } from "./core/shutdown.js";
 import { initDB } from "./services/database/db.js";
 import { migrate } from "./services/database/migrations.js";
