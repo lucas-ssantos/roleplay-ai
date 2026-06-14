@@ -1,0 +1,20 @@
+┌─────────────────────────────────────────────┐
+│  [1] SYSTEM PROMPT          ~200-400 tokens │  ← quem é o personagem
+│      {{char}}, {{personality}}, {{scenario}}│
+├─────────────────────────────────────────────┤
+│  [2] MEMÓRIAS RELEVANTES    ~200-400 tokens │  ← resgatadas por keyword
+│      (pinned primeiro, depois por score)    │
+├─────────────────────────────────────────────┤
+│  [3] LOREBOOK ENTRIES       ~0-300 tokens   │  ← ativadas por keyword
+├─────────────────────────────────────────────┤
+│  [4] EXAMPLE DIALOGUES      ~0-200 tokens   │  ← few-shot do personagem
+│      (só se couber no budget)               │
+├─────────────────────────────────────────────┤
+│  [5] HISTÓRICO              ~resto do budget│  ← msgs mais recentes
+│      (começa do fim, vai cortando se cheio) │
+├─────────────────────────────────────────────┤
+│  [6] AUTHOR'S NOTE          ~50-100 tokens  │  ← injetado N msgs antes do fim
+│      "Responda em português, seja breve"    │
+└─────────────────────────────────────────────┘
+                    ↓
+            Modelo gera resposta

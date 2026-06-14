@@ -116,12 +116,13 @@ export async function migrate() {
       repeat_penalty REAL DEFAULT 1.1,
       repeat_last_n INTEGER DEFAULT 64,
       tfs_z REAL DEFAULT 1.0,
-      max_tokens INTEGER DEFAULT 512,
+      max_tokens INTEGER DEFAULT -1,
       context_size INTEGER DEFAULT 4096,
       stream INTEGER DEFAULT 1,
       seed INTEGER DEFAULT -1,
       stop TEXT,
       num_ctx_messages INTEGER DEFAULT 20,
+      min_tokens INTEGER DEFAULT 60,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
