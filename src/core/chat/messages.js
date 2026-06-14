@@ -3,7 +3,7 @@ import {
     getCharacter, getPersona, getGenerationConfig,
     getConversation, addMessage, updateMessage, rollbackConversation,
     deleteLastAssistantMessage, getLastNMessages,
-    getAllLorebooks,
+    getAllLorebooks, getMemories,
 } from "../../services/database/queries.js";
 import { buildPromptMessages } from "../promptBuilder.js";
 import { resolveConfig, dynamicMaxTokens, startSSE, handleSSEError, streamOllama } from "./helpers.js";
@@ -58,6 +58,8 @@ router.post("/conversations/:id/messages", async (req, res) => {
                 messages: ollamaMessages,
                 rawResponse: rawContent,
                 filteredResponse: fullContent,
+                allMemories: getMemories(conversationId),
+                allLorebooks: lorebooks,
             });
 
             let pinnedMemoriesCreated = 0;
@@ -120,6 +122,8 @@ router.post("/conversations/:id/regenerate", async (req, res) => {
                 messages: ollamaMessages,
                 rawResponse: rawContent,
                 filteredResponse: fullContent,
+                allMemories: getMemories(conversationId),
+                allLorebooks: lorebooks,
                 isRegen: true,
             });
 

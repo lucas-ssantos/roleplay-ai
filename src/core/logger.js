@@ -29,6 +29,8 @@ export function logConversationTurn({
     messages,
     rawResponse,
     filteredResponse,
+    allMemories  = [],
+    allLorebooks = [],
     isRegen = false,
 }) {
     if (!isDevMode()) return;
@@ -47,7 +49,9 @@ export function logConversationTurn({
 
         const entry = buildLogEntry({
             character, model, messages,
-            rawResponse, filteredResponse, isRegen,
+            rawResponse, filteredResponse,
+            allMemories, allLorebooks,
+            isRegen,
         });
 
         fs.appendFileSync(filepath, entry, "utf8");
@@ -67,7 +71,7 @@ function section(label) {
     return `\n── ${label} ${dashes}`;
 }
 
-function buildLogEntry({ character, model, messages, rawResponse, filteredResponse, isRegen }) {
+function buildLogEntry({ character, model, messages, rawResponse, filteredResponse, allMemories, allLorebooks, isRegen }) {
     const now = new Date().toLocaleString("pt-BR", {
         dateStyle: "short",
         timeStyle: "medium",
@@ -91,20 +95,55 @@ function buildLogEntry({ character, model, messages, rawResponse, filteredRespon
     // ── [1] System prompt — separado pelas seções do promptBuilder ────────────
     const systemParts = (systemMsg?.content || "").split("\n\n---\n\n");
 
-    lines.push(section("[1] SYSTEM PROMPT — base (descrição + personalidade + persona)"));
+    lines.push(section("[1] SYSTEM PROMPT — base (descrição + personalidade + persona + regras a serem seguidas)"));
     lines.push(systemParts[0] || "(vazio)");
+
+    let memoriesInjected = false;
+    let lorebookInjected = false;
 
     for (let i = 1; i < systemParts.length; i++) {
         const part = systemParts[i];
         if (part.startsWith("[Relevant memories]")) {
+            memoriesInjected = true;
             lines.push(section("[2] MEMÓRIAS (injetadas no prompt)"));
             lines.push(part.replace(/^\[Relevant memories\]\n/, ""));
         } else if (part.startsWith("[World info]")) {
-            lines.push(section("[3] LOREBOOK / WORLD INFO"));
+            lorebookInjected = true;
+            lines.push(section("[3] LOREBOOK / WORLD INFO (injetado)"));
             lines.push(part.replace(/^\[World info\]\n/, ""));
         } else {
             lines.push(section("[?] SEÇÃO EXTRA"));
             lines.push(part);
+        }
+    }
+
+    if (!memoriesInjected) {
+        lines.push(section("[2] MEMÓRIAS (nenhuma injetada)"));
+        if (!allMemories?.length) {
+            lines.push("  (conversa sem memórias registradas)");
+        } else {
+            const n = allMemories.length;
+            lines.push(`  ${n} memória${n > 1 ? "s" : ""} disponível${n > 1 ? "is" : ""}, nenhuma ativada por keyword neste turno:`);
+            for (const m of allMemories) {
+                const tag     = m.is_pinned ? "pinned" : (m.type || "?");
+                const snippet = (m.summary || m.content || "").slice(0, 90).replace(/\n/g, " ");
+                const kws     = m.keywords ? ` · keywords: ${m.keywords}` : " · (sem keywords)";
+                lines.push(`  · [${tag}] "${snippet}"${kws}`);
+            }
+        }
+    }
+
+    if (!lorebookInjected) {
+        lines.push(section("[3] LOREBOOK / WORLD INFO (nenhum injetado)"));
+        if (!allLorebooks?.length) {
+            lines.push("  (nenhum lorebook associado a este personagem)");
+        } else {
+            const n = allLorebooks.length;
+            lines.push(`  ${n} lorebook${n > 1 ? "s" : ""} disponível${n > 1 ? "is" : ""}, nenhum ativado por keyword neste turno:`);
+            for (const lb of allLorebooks) {
+                const kws = lb.keywords ? ` · keywords: ${lb.keywords}` : " · (sem keywords — sempre ativo)";
+                lines.push(`  · "${lb.title}"${kws}`);
+            }
         }
     }
 
