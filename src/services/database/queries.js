@@ -566,6 +566,13 @@ export function setGenerationConfig(level = 'global', id = null, config = {}) {
   saveDB();
 }
 
+export function resetConversation(conversationId) {
+  const db = getDB();
+  db.run(`DELETE FROM messages WHERE conversation_id = ?`, [conversationId]);
+  db.run(`DELETE FROM memories WHERE conversation_id = ?`, [conversationId]);
+  saveDB();
+}
+
 // ===== Token Usage =====
 export function recordTokenUsage(conversationId, messageId = null, estimatedTokens = 0) {
   const db = getDB();

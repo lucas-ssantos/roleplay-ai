@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
     getCharacter, getPersona,
     createConversation, getConversation, getLatestConversationForCharacter,
-    addMessage, getConversationMessages,
+    addMessage, getConversationMessages, resetConversation,
 } from "../../services/database/queries.js";
 
 const router = Router();
@@ -69,6 +69,32 @@ router.get("/conversations/:id", (req, res) => {
 router.get("/conversations/:id/messages", (req, res) => {
     try {
         res.json({ ok: true, messages: getConversationMessages(req.params.id) });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+});
+
+// ── POST /api/conversations/:id/reset ────────────────────────────────────────
+router.post("/conversations/:id/reset", (req, res) => {
+    try {
+        const conv = getConversation(req.params.id);
+        if (!conv) return res.status(404).json({ ok: false, message: "Conversa não encontrada." });
+
+        const character = getCharacter(conv.character_id);
+        if (!character) return res.status(404).json({ ok: false, message: "Personagem não encontrado." });
+
+        resetConversation(req.params.id);
+
+        let firstMsg = null;
+        if (character.first_message) {
+            const persona   = getPersona();
+            const userName  = persona?.name || "você";
+            const content   = character.first_message.replace(/\{\{user\}\}/gi, userName);
+            const msgId     = addMessage(req.params.id, "assistant", content, 0);
+            firstMsg = { id: msgId, role: "assistant", content };
+        }
+
+        res.json({ ok: true, first_message: firstMsg });
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message });
     }

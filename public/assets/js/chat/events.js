@@ -16,6 +16,10 @@ let rollbackTargetRow = null;
 let editConfirmModal;
 let editPendingCallback = null;
 
+// ── Reset state ───────────────────────────────────────────────────────
+
+let resetModal;
+
 // ── Bubbles ───────────────────────────────────────────────────────────
 
 export function addBubble(role, content, messageId = null) {
@@ -279,6 +283,48 @@ export async function regenerateLastMessage(rowEl) {
     dom.inputEl.focus();
     scrollToBottom();
   }
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────
+
+export function initResetModal() {
+  resetModal = new bootstrap.Modal(document.getElementById('resetModal'));
+
+  document.getElementById('nav-reset-chat').addEventListener('click', (e) => {
+    e.preventDefault();
+    const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('chatNav'));
+    if (offcanvas) {
+      offcanvas.hide();
+      document.getElementById('chatNav').addEventListener('hidden.bs.offcanvas', () => {
+        resetModal.show();
+      }, { once: true });
+    } else {
+      resetModal.show();
+    }
+  });
+
+  document.getElementById('reset-confirm-btn').addEventListener('click', async () => {
+    if (!state.conversationId) return;
+    resetModal.hide();
+    try {
+      const res  = await fetch(`/api/conversations/${state.conversationId}/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message);
+
+      dom.messagesEl.innerHTML = '';
+
+      if (data.first_message) {
+        addBubble('assistant', data.first_message.content, data.first_message.id);
+      }
+
+      updateLastCharRow();
+    } catch (err) {
+      showError(`Erro ao reiniciar conversa: ${err.message}`);
+    }
+  });
 }
 
 // ── Auto-resize ───────────────────────────────────────────────────────

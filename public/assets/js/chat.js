@@ -1,5 +1,5 @@
 import { initDomRefs } from './chat/state.js';
-import { initRollbackModal, initEditModal } from './chat/events.js';
+import { initRollbackModal, initEditModal, initResetModal } from './chat/events.js';
 import { init, initImmersiveMode } from './chat/loader.js';
 
 window.addEventListener('load', () => {
@@ -7,5 +7,6 @@ window.addEventListener('load', () => {
   initImmersiveMode();
   initRollbackModal();
   initEditModal();
+  initResetModal();
   init();
 });
