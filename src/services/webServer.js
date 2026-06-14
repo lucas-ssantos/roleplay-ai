@@ -359,12 +359,12 @@ export async function startWebServer(port = process.env.PORT || 3000)
         console.log(`Web server listening on ${url}`);
         try
         {
-            const opener = spawn("xdg-open", [url], { detached: true, stdio: "ignore" });
-            opener.unref();
+            //const opener = spawn("xdg-open", [url], { detached: true, stdio: "ignore" });
+            //opener.unref();
         }
         catch (e)
         {
-            console.warn("Falha ao abrir o navegador automaticamente:", e.message);
+            //console.warn("Falha ao abrir o navegador automaticamente:", e.message);
         }
     });
 

@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
     getCharacter, getPersona, getGenerationConfig,
     createConversation, getConversation, getLatestConversationForCharacter,
-    addMessage, rollbackConversation, deleteLastAssistantMessage,
+    addMessage, updateMessage, rollbackConversation, deleteLastAssistantMessage,
     getConversationMessages, getLastNMessages,
     getMemories, getAllLorebooks,
 } from "../services/database/queries.js";
@@ -319,6 +319,18 @@ router.post("/conversations/:id/regenerate", async (req, res) => {
         });
     } catch (err) {
         handleSSEError(res, err, "Regenerate error");
+    }
+});
+
+// ── PATCH /api/conversations/:id/messages/:msgId ─────────────────────────────
+router.patch("/conversations/:id/messages/:msgId", (req, res) => {
+    try {
+        const { content } = req.body;
+        if (!content?.trim()) return res.status(400).json({ ok: false, message: "Conteúdo não pode ser vazio." });
+        updateMessage(req.params.msgId, content.trim());
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
     }
 });
 

@@ -179,6 +179,12 @@ export function deleteLastAssistantMessage(conversationId) {
   return { id, position };
 }
 
+export function updateMessage(messageId, content) {
+  const db = getDB();
+  db.run(`UPDATE messages SET content = ? WHERE id = ?`, [content, messageId]);
+  saveDB();
+}
+
 export function rollbackConversation(conversationId, messageId) {
   const db = getDB();
   const posResult = db.exec(

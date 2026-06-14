@@ -252,6 +252,82 @@
         pointer-events: none;
       }
 
+      /* ── Edit button ── */
+      .edit-btn {
+        flex-shrink: 0;
+        width: 1.65rem;
+        height: 1.65rem;
+        border-radius: 50%;
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #64748b;
+        font-size: 0.78rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.18s, background 0.18s, color 0.18s, border-color 0.18s;
+      }
+
+      .msg-row:hover .edit-btn {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .edit-btn:hover {
+        background: rgba(99, 102, 241, 0.15);
+        border-color: rgba(99, 102, 241, 0.4);
+        color: #a5b4fc;
+      }
+
+      /* ── Inline edit mode ── */
+      .edit-textarea {
+        width: 100%;
+        background: rgba(2, 6, 23, 0.5);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        border-radius: .5rem;
+        color: #e2e8f0;
+        font-size: 0.95rem;
+        font-family: inherit;
+        line-height: 1.65;
+        padding: .4rem .6rem;
+        resize: vertical;
+        outline: none;
+        margin-bottom: .5rem;
+      }
+
+      .edit-actions {
+        display: flex;
+        gap: .4rem;
+        justify-content: flex-end;
+      }
+
+      .edit-save-btn, .edit-cancel-btn {
+        border: none;
+        border-radius: .5rem;
+        padding: .25rem .75rem;
+        font-size: .8rem;
+        cursor: pointer;
+      }
+
+      .edit-save-btn {
+        background: rgba(56, 189, 248, 0.2);
+        border: 1px solid rgba(56, 189, 248, 0.4);
+        color: #7dd3fc;
+      }
+
+      .edit-save-btn:hover { background: rgba(56, 189, 248, 0.32); }
+
+      .edit-cancel-btn {
+        background: rgba(30, 41, 59, .7);
+        border: 1px solid rgba(148, 163, 184, .2);
+        color: #94a3b8;
+      }
+
+      .edit-cancel-btn:hover { background: rgba(30, 41, 59, 1); }
+
       /* ── Action text *between asterisks* ── */
       .action-text {
         font-style: italic;
@@ -684,6 +760,37 @@
       </div>
     </div>
 
+    <!-- ── Edit confirmation modal ───────────────────────────────────── -->
+    <div class="modal fade" id="editConfirmModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered" style="max-width:360px;">
+        <div class="modal-content" style="background:rgba(6,12,30,0.98); border:1px solid rgba(148,163,184,0.15); border-radius:1.1rem;">
+          <div class="modal-header" style="border-bottom:1px solid rgba(148,163,184,0.1); padding:1.1rem 1.25rem .85rem;">
+            <h6 class="modal-title mb-0" style="color:#f1f5f9; font-weight:700; font-size:.95rem;">
+              <i class="bi bi-pencil me-2" style="color:#a5b4fc;"></i>Editar mensagem
+            </h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="font-size:.8rem;"></button>
+          </div>
+          <div class="modal-body" style="color:#94a3b8; font-size:.88rem; line-height:1.65; padding:1.1rem 1.25rem;">
+            <p class="mb-2">Esta não é a última mensagem da conversa.</p>
+            <p class="mb-0" style="color:#fbbf24; font-size:.82rem;">
+              <i class="bi bi-exclamation-triangle me-1"></i>
+              As mensagens posteriores continuarão existindo mas podem ficar fora de contexto com o novo texto.
+            </p>
+          </div>
+          <div class="modal-footer" style="border-top:1px solid rgba(148,163,184,0.1); padding:.85rem 1.25rem; gap:.5rem;">
+            <button type="button" data-bs-dismiss="modal"
+                    style="background:rgba(30,41,59,.7); border:1px solid rgba(148,163,184,.2); color:#cbd5e1; border-radius:.75rem; padding:.35rem .9rem; font-size:.85rem; cursor:pointer;">
+              Cancelar
+            </button>
+            <button type="button" id="edit-confirm-btn"
+                    style="background:rgba(99,102,241,.18); border:1px solid rgba(99,102,241,.4); color:#a5b4fc; border-radius:.75rem; padding:.35rem .9rem; font-size:.85rem; cursor:pointer;">
+              <i class="bi bi-pencil me-1"></i>Editar mesmo assim
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="bg" id="bg"></div>
     <div class="bg-overlay"></div>
 
@@ -744,6 +851,7 @@
       }
 
       function renderBubbleText(el, text) {
+        el.dataset.raw = text;
         const escaped = text
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
@@ -778,6 +886,7 @@
         }
 
         if (messageId && !isUser) attachRollbackBtn(row, messageId);
+        if (messageId) attachEditBtn(row, messageId);
 
         messagesEl.appendChild(row);
         scrollToBottom();
@@ -927,6 +1036,108 @@
             rollbackTargetRow = null;
           }
         });
+      }
+
+      // ── Edit modal + inline edit ──────────────────────────────────────────
+
+      let editConfirmModal;
+      let editPendingCallback = null;
+
+      function initEditModal() {
+        editConfirmModal = new bootstrap.Modal(document.getElementById('editConfirmModal'));
+        document.getElementById('edit-confirm-btn').addEventListener('click', () => {
+          editConfirmModal.hide();
+          if (editPendingCallback) { editPendingCallback(); editPendingCallback = null; }
+        });
+        document.getElementById('editConfirmModal').addEventListener('hidden.bs.modal', () => {
+          editPendingCallback = null;
+        });
+      }
+
+      function isLastRow(row) {
+        const all = [...messagesEl.querySelectorAll('.msg-row')];
+        return all[all.length - 1] === row;
+      }
+
+      function enterEditMode(row, messageId) {
+        if (row.querySelector('.edit-textarea')) return; // already editing
+        const textEl = row.querySelector('.bubble-text');
+        const bubble = row.querySelector('.bubble');
+        const originalText = textEl.dataset.raw ?? textEl.textContent;
+
+        textEl.style.display = 'none';
+
+        const ta = document.createElement('textarea');
+        ta.className = 'edit-textarea';
+        ta.value = originalText;
+        ta.rows = Math.max(2, (originalText.match(/\n/g) || []).length + 2);
+        ta.addEventListener('input', () => {
+          ta.style.height = 'auto';
+          ta.style.height = ta.scrollHeight + 'px';
+        });
+
+        const actions = document.createElement('div');
+        actions.className = 'edit-actions';
+
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'edit-save-btn';
+        saveBtn.textContent = 'Salvar';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'edit-cancel-btn';
+        cancelBtn.textContent = 'Cancelar';
+
+        actions.appendChild(cancelBtn);
+        actions.appendChild(saveBtn);
+        bubble.appendChild(ta);
+        bubble.appendChild(actions);
+        ta.focus();
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+
+        cancelBtn.addEventListener('click', () => {
+          ta.remove();
+          actions.remove();
+          textEl.style.display = '';
+        });
+
+        saveBtn.addEventListener('click', async () => {
+          const newText = ta.value.trim();
+          if (!newText) return;
+          saveBtn.disabled = true;
+          try {
+            const res = await fetch(`/api/conversations/${conversationId}/messages/${messageId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ content: newText }),
+            });
+            const data = await res.json();
+            if (!data.ok) throw new Error(data.message);
+            ta.remove();
+            actions.remove();
+            textEl.style.display = '';
+            renderBubbleText(textEl, newText);
+          } catch (err) {
+            showError(`Erro ao salvar: ${err.message}`);
+            saveBtn.disabled = false;
+          }
+        });
+      }
+
+      function attachEditBtn(row, messageId) {
+        const btn = document.createElement('button');
+        btn.className = 'edit-btn';
+        btn.title = 'Editar mensagem';
+        btn.innerHTML = '<i class="bi bi-pencil"></i>';
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (isLastRow(row)) {
+            enterEditMode(row, messageId);
+          } else {
+            editPendingCallback = () => enterEditMode(row, messageId);
+            editConfirmModal.show();
+          }
+        });
+        row.appendChild(btn);
       }
 
       function addTypingIndicator() {
@@ -1130,6 +1341,7 @@
 
       window.addEventListener('load', () => {
         initRollbackModal();
+        initEditModal();
         init();
       });
     </script>
