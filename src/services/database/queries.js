@@ -214,19 +214,19 @@ export function getConversationMessages(conversationId) {
 
 export function getLastNMessages(conversationId, n = 20) {
   const db = getDB();
-  const result = db.exec(
-    `SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at DESC LIMIT ? `,
-    [conversationId, n]
-  );
-  if (result.length === 0) return [];
-  return result[0].values.reverse().map((row) => ({
-    id: row[0],
-    conversation_id: row[1],
-    role: row[2],
-    content: row[3],
-    position: row[4],
-    created_at: row[5],
-  }));
+  const mapRow = (row) => ({
+    id: row[0], conversation_id: row[1], role: row[2],
+    content: row[3], position: row[4], created_at: row[5],
+  });
+  const run = (role) => {
+    const r = db.exec(
+      `SELECT * FROM messages WHERE conversation_id = ? AND role = ? ORDER BY position DESC LIMIT ?`,
+      [conversationId, role, n]
+    );
+    return r.length > 0 ? r[0].values.map(mapRow) : [];
+  };
+  return [...run('user'), ...run('assistant')]
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 }
 
 // ===== Memories (auto, manual, pinned) =====

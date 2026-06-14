@@ -198,6 +198,15 @@
                   </div>
                   <div class="col-12 col-sm-6 col-lg-4">
                     <label class="form-label d-flex align-items-center gap-1">
+                      Msgs de contexto (por papel)
+                      <i class="bi bi-info-circle text-secondary" style="font-size:.8rem;"
+                         data-bs-toggle="tooltip"
+                         title="Quantas mensagens do usuário E do personagem incluir no histórico enviado ao modelo. Ex.: 6 = últimas 6 de cada."></i>
+                    </label>
+                    <input type="number" id="num_ctx_messages" name="num_ctx_messages" class="form-control" min="1" max="100" step="1" />
+                  </div>
+                  <div class="col-12 col-sm-6 col-lg-4">
+                    <label class="form-label d-flex align-items-center gap-1">
                       Mín. tokens (resposta)
                       <i class="bi bi-info-circle text-secondary" style="font-size:.8rem;"
                          data-bs-toggle="tooltip"
@@ -306,8 +315,9 @@
         document.getElementById('tfs_z').value          = config.tfs_z          ?? '';
         document.getElementById('repeat_penalty').value = config.repeat_penalty ?? '';
         document.getElementById('repeat_last_n').value  = config.repeat_last_n  ?? '';
-        document.getElementById('context_size').value   = config.context_size   ?? '';
-        document.getElementById('min_tokens').value     = config.min_tokens     ?? '';
+        document.getElementById('context_size').value      = config.context_size      ?? '';
+        document.getElementById('num_ctx_messages').value  = config.num_ctx_messages  ?? '';
+        document.getElementById('min_tokens').value        = config.min_tokens        ?? '';
         document.getElementById('max_tokens').value     = config.max_tokens     ?? '';
         document.getElementById('stream').value         = config.stream ? '1' : '0';
         document.getElementById('seed').value           = config.seed           ?? '';
@@ -355,8 +365,9 @@
           tfs_z:          parseFloat(document.getElementById('tfs_z').value)          || null,
           repeat_penalty: parseFloat(document.getElementById('repeat_penalty').value) || null,
           repeat_last_n:  parseInt(document.getElementById('repeat_last_n').value)    || null,
-          context_size:   parseInt(document.getElementById('context_size').value)     || null,
-          min_tokens:     parseInt(document.getElementById('min_tokens').value)       || null,
+          context_size:     parseInt(document.getElementById('context_size').value)     || null,
+          num_ctx_messages: parseInt(document.getElementById('num_ctx_messages').value) || null,
+          min_tokens:       parseInt(document.getElementById('min_tokens').value)       || null,
           max_tokens:     parseInt(document.getElementById('max_tokens').value)       || null,
           stream:         parseInt(document.getElementById('stream').value)           || null,
           seed:           parseInt(document.getElementById('seed').value)             || -1,
