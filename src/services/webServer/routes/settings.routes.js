@@ -37,6 +37,74 @@ router.get("/api/presets", (_req, res) => {
     }
 });
 
+router.get("/api/models", async (_req, res) => {
+    try {
+        const ollamaRes = await fetch(appConfig.ollama.tagsEndpoint);
+        if (!ollamaRes.ok) throw new Error(`Ollama: ${ollamaRes.status}`);
+        const data = await ollamaRes.json();
+        const models = (data.models || []).map(m => ({
+            name:           m.name,
+            size:           m.size,
+            family:         m.details?.family || null,
+            parameter_size: m.details?.parameter_size || null,
+        }));
+        res.json({ ok: true, models });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+});
+
+router.post("/api/models/pull", async (req, res) => {
+    const { model } = req.body;
+    if (!model?.trim()) return res.status(400).json({ ok: false, message: "Nome do modelo obrigatório." });
+
+    res.set({ "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" });
+    res.flushHeaders();
+
+    try {
+        const pullRes = await fetch(`${appConfig.ollama.host}/api/pull`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: model.trim(), stream: true }),
+        });
+
+        if (!pullRes.ok) {
+            const text = await pullRes.text();
+            res.write(`data: ${JSON.stringify({ error: text })}\n\n`);
+            res.end();
+            return;
+        }
+
+        const reader  = pullRes.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer    = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                    const parsed = JSON.parse(line);
+                    res.write(`data: ${JSON.stringify(parsed)}\n\n`);
+                } catch { /* skip malformed chunk */ }
+            }
+        }
+
+        res.end();
+    } catch (err) {
+        try {
+            res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+            res.end();
+        } catch { /* client disconnected */ }
+    }
+});
+
 router.get("/api/config", (_req, res) => {
     try {
         const config = getGenerationConfig("global");

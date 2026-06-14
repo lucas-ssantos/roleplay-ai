@@ -33,33 +33,55 @@
 
             <form id="settings-form" class="d-flex flex-column gap-4">
 
-              <!-- Modelo -->
+              <!-- Modelo em uso -->
               <div class="glass-card card p-4">
-                <div class="field-section-title"><i class="bi bi-cpu"></i> Modelo</div>
+                <div class="field-section-title"><i class="bi bi-cpu"></i> Modelo em uso</div>
                 <select id="model" name="model" class="form-select" required>
-                  <option value="">— Selecione um modelo —</option>
-                  <optgroup label="Fracos (4b · ~3-4 GB VRAM)">
-                    <option value="qwen3:4b">Qwen3 4B</option>
-                    <option value="llama2:4b">Llama2 4B</option>
-                    <option value="mistral:4b">Mistral 4B</option>
-                  </optgroup>
-                  <optgroup label="Médios (7b · ~5-6 GB VRAM)">
-                    <option value="qwen3:7b">Qwen3 7B</option>
-                    <option value="llama2:7b">Llama2 7B</option>
-                    <option value="mistral:7b">Mistral 7B</option>
-                  </optgroup>
-                  <optgroup label="Fortes (8b-13b · ~6-10 GB VRAM)">
-                    <option value="qwen3:8b">Qwen3 8B (Recomendado)</option>
-                    <option value="llama2:8b">Llama2 8B</option>
-                    <option value="mistral:8b">Mistral 8B</option>
-                    <option value="neural-chat:7b">Neural Chat 7B</option>
-                  </optgroup>
-                  <optgroup label="Premium (13b+ · 10-16+ GB VRAM)">
-                    <option value="qwen3:13b">Qwen3 13B</option>
-                    <option value="llama2:13b">Llama2 13B</option>
-                    <option value="mistral:13b">Mistral 13B</option>
-                  </optgroup>
+                  <option value="">— Carregando modelos instalados... —</option>
                 </select>
+                <div class="ctx-alert mt-3">
+                  <i class="bi bi-info-circle-fill flex-shrink-0" style="margin-top:.1rem;"></i>
+                  <span>
+                    Modelos customizados com contexto expandido (ex: <code>gemma4:e4b-32k</code>) exigem que o
+                    <strong>Context Size</strong> abaixo esteja configurado adequadamente — caso contrário, o contexto
+                    extra não será aproveitado. Às vezes é necessário recarregar o modelo no Ollama após alterar esse valor.
+                  </span>
+                </div>
+              </div>
+
+              <!-- Baixar novo modelo -->
+              <div class="glass-card card p-4">
+                <div class="field-section-title"><i class="bi bi-cloud-download"></i> Baixar novo modelo</div>
+
+                <label class="form-label text-secondary" style="font-size:.85rem; margin-bottom:.4rem;">Sugestões para roleplay</label>
+                <select id="recommended-models" class="form-select mb-3">
+                  <option value="">— Carregando sugestões... —</option>
+                </select>
+
+                <label class="form-label text-secondary" style="font-size:.85rem; margin-bottom:.4rem;">Ou insira o nome manualmente</label>
+                <div class="input-group">
+                  <input type="text" id="pull-model-input" class="form-control"
+                         placeholder="ex: llama3.1:8b" autocomplete="off" />
+                  <button type="button" class="btn-pull" id="pull-model-btn">
+                    <i class="bi bi-download me-1"></i>Baixar
+                  </button>
+                </div>
+                <div class="form-text mt-1">
+                  Escolha da lista ou insira qualquer modelo do Ollama Hub. Modelos baixados saem das sugestões e entram na lista de instalados.
+                </div>
+
+                <!-- Pull progress -->
+                <div id="pull-progress" class="mt-3" style="display:none;">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="spinner-border spinner-border-sm" role="status" style="color:#38bdf8; width:1rem; height:1rem;"></div>
+                    <span id="pull-status-text" class="text-secondary" style="font-size:.85rem;"></span>
+                  </div>
+                  <div class="progress mb-1" style="height:5px; background:rgba(148,163,184,0.12); border-radius:99px;">
+                    <div id="pull-progress-bar" class="progress-bar" role="progressbar"
+                         style="width:0%; background:#38bdf8; transition:width .3s;"></div>
+                  </div>
+                  <small id="pull-bytes-text" class="text-secondary" style="font-size:.75rem;"></small>
+                </div>
               </div>
 
               <!-- Sampling -->
