@@ -41,7 +41,7 @@ export async function startWebServer(port = process.env.PORT || 3000)
 {
     const app = express();
     const publicPath = path.resolve(process.cwd(), "public");
-    const uploadDir = path.join(publicPath, "uploads");
+    const uploadDir = path.join(publicPath, "assets/uploads");
 
     if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
@@ -145,7 +145,7 @@ export async function startWebServer(port = process.env.PORT || 3000)
                 const destination = path.join(uploadDir, safeName);
                 const buffer = Buffer.from(avatar_upload, 'base64');
                 fs.writeFileSync(destination, buffer);
-                avatarUrl = `/uploads/${safeName}`;
+                avatarUrl = `/assets/uploads/${safeName}`;
             } else if (avatar_link) {
                 avatarUrl = avatar_link;
             } else {
