@@ -1,8 +1,0 @@
-characters          → dados do personagem + avatar
-conversations       → conversa vinculada a um personagem + persona do user
-messages            → histórico com role (user/assistant/system) + posição
-memories            → memórias com tipo, keywords, peso de relevância
-lorebooks           → entradas de lore com keywords de ativação
-lorebook_characters → tabela de junção lorebook ↔ character
-settings            → configurações globais (1 linha)
-conversation_settings → overrides por conversa
