@@ -3,10 +3,11 @@ import {
     getCharacter, getPersona, getGenerationConfig,
     getConversation, addMessage, updateMessage, rollbackConversation,
     deleteLastAssistantMessage, getLastNMessages,
-    getMemories, getAllLorebooks,
+    getAllLorebooks,
 } from "../../services/database/queries.js";
 import { buildPromptMessages } from "../promptBuilder.js";
 import { resolveConfig, dynamicMaxTokens, startSSE, handleSSEError, streamOllama } from "./helpers.js";
+import { getMemoriesForPrompt } from "../memory/index.js";
 
 const router = Router();
 
@@ -28,7 +29,7 @@ router.post("/conversations/:id/messages", async (req, res) => {
         const charConfig = getGenerationConfig("character", conv.character_id);
 
         const recentMsgs = getLastNMessages(conversationId, config.num_ctx_messages || 20);
-        const memories   = getMemories(conversationId);
+        const memories   = getMemoriesForPrompt(conversationId, { userMessage: content.trim(), recentMessages: recentMsgs });
         const lorebooks  = getAllLorebooks(conv.character_id);
 
         const ollamaMessages = buildPromptMessages({
@@ -73,7 +74,8 @@ router.post("/conversations/:id/regenerate", async (req, res) => {
         const charConfig = getGenerationConfig("character", conv.character_id);
 
         const recentMsgs = getLastNMessages(conversationId, config.num_ctx_messages || 20);
-        const memories   = getMemories(conversationId);
+        const lastUser   = [...recentMsgs].reverse().find(m => m.role === "user");
+        const memories   = getMemoriesForPrompt(conversationId, { userMessage: lastUser?.content ?? '', recentMessages: recentMsgs });
         const lorebooks  = getAllLorebooks(conv.character_id);
 
         const ollamaMessages = buildPromptMessages({
@@ -83,8 +85,7 @@ router.post("/conversations/:id/regenerate", async (req, res) => {
             memories, lorebooks,
         });
 
-        const lastUserMsg  = [...recentMsgs].reverse().find(m => m.role === "user");
-        const regenConfig  = { ...config, max_tokens: lastUserMsg ? dynamicMaxTokens(lastUserMsg.content, config) : (config.min_tokens ?? 60) * 2 };
+        const regenConfig  = { ...config, max_tokens: lastUser ? dynamicMaxTokens(lastUser.content, config) : (config.min_tokens ?? 60) * 2 };
 
         startSSE(res);
         await streamOllama(res, ollamaMessages, regenConfig, (fullContent) => {
