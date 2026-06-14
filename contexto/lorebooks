@@ -1,0 +1,101 @@
+# Lorebooks — World Info
+
+## O que são
+
+Lorebooks são entradas de contexto externo — informações sobre o mundo, NPCs, facções, localizações, regras de lore, etc. Eles **não pertencem a uma única conversa**: existem de forma independente e são injetados no prompt sempre que o conteúdo recente do chat mencionar as palavras-chave configuradas.
+
+Inspiração: o "World Info" do SillyTavern / Character.AI.
+
+---
+
+## Modelo de dados
+
+```
+lorebooks
+  id              TEXT (UUID)
+  scope           TEXT = 'global'
+  character_id    TEXT (NULL — campo legado, não usado na nova UI)
+  title           TEXT — nome da entrada (ex: "Facção dos Corvos")
+  content         TEXT — texto injetado no prompt quando ativado
+  keywords        TEXT — CSV de triggers (ex: "corvos, guilda, capitão")
+  insertion_order INTEGER — menor número = injetado primeiro
+  created_at      DATETIME
+  updated_at      DATETIME
+
+character_lorebooks         ← tabela de associação many-to-many
+  character_id    TEXT  FK → characters.id  ON DELETE CASCADE
+  lorebook_id     TEXT  FK → lorebooks.id   ON DELETE CASCADE
+  PRIMARY KEY (character_id, lorebook_id)
+```
+
+---
+
+## Como são ativados
+
+Em `src/core/promptBuilder.js`, a função `filterLorebooks(lorebooks, contextText)`:
+
+1. Concatena a mensagem atual do usuário com as últimas 5 mensagens do histórico → `contextText`
+2. Para cada lorebook, verifica se alguma keyword aparece em `contextText` (case-insensitive, substring match)
+3. Lorebooks **sem keywords** são sempre injetados ("always-on")
+4. Os ativos são ordenados por `insertion_order ASC` e injetados na seção `[World info]` do system prompt
+
+---
+
+## Associação por personagem
+
+Gerenciada pela tabela `character_lorebooks` (many-to-many):
+
+- Se um personagem **tem** entradas em `character_lorebooks` → `getAllLorebooks(characterId)` retorna somente esses lorebooks
+- Se um personagem **não tem** entradas → retorna todos os lorebooks (comportamento padrão retrocompatível)
+
+Isso permite que cada personagem tenha um "universo" diferente de lore disponível.
+
+---
+
+## Fluxo de injeção no prompt
+
+```
+[1] System prompt base (descrição + personalidade + cenário + persona)
+[2] Memórias relevantes (pinned + keyword-matched)
+[3] Lorebook entries ativados  ← AQUI
+[4] Histórico de mensagens
+[5] Author's Note (jailbreak, se configurado)
+[6] Mensagem atual do usuário
+```
+
+Os lorebooks vão para o system prompt, agrupados sob o marcador `[World info]`:
+
+```
+[World info]
+[Facção dos Corvos]
+Uma guilda criminosa que controla o porto de Kaelthor...
+
+[Reino de Aelindra]
+Monarquia constitucional fundada há 400 anos...
+```
+
+---
+
+## Boas práticas de criação
+
+**Keywords eficientes:**
+- Use termos específicos ao lore, não palavras genéricas ("corvos" > "guilda")
+- Múltiplas variações: "rei, rei Aldric, majestade"
+- Sem keywords → injetado sempre (use para lore universal essencial)
+
+**Conteúdo:**
+- Seja conciso — cada lorebook consome tokens do contexto
+- Escreva na terceira pessoa como um narrador omnisciente
+- Separe entradas por escopo (NPC X fação X localização)
+
+**Insertion order:**
+- 0 = mais prioritário (injetado primeiro no bloco [World info])
+- Use para garantir que lore crítico apareça antes do lore auxiliar
+
+---
+
+## Gerenciamento (UI)
+
+- **Página `/lorebooks`**: listar, criar, editar e excluir lorebooks
+- **Editar personagem (`/character/:id/edit`)**: seção com checkboxes para selecionar quais lorebooks o personagem acessa
+- Lorebooks sem nenhuma associação ficam disponíveis como fallback para todos os personagens

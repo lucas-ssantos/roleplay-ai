@@ -27,9 +27,14 @@ async function readFileAsBase64(file) {
 
 async function loadCharacter() {
   try {
-    const res = await fetch(`/api/characters/${characterId}`);
-    if (!res.ok) throw new Error('Personagem não encontrado.');
-    const { character } = await res.json();
+    const [charRes, lbAllRes, lbCharRes] = await Promise.all([
+      fetch(`/api/characters/${characterId}`),
+      fetch('/api/lorebooks'),
+      fetch(`/api/characters/${characterId}/lorebooks`),
+    ]);
+
+    if (!charRes.ok) throw new Error('Personagem não encontrado.');
+    const { character } = await charRes.json();
 
     document.title = `Editar ${character.name} — OpenRP AI`;
     document.getElementById('subtitle').textContent = `Modificando dados de ${character.name}`;
@@ -49,9 +54,35 @@ async function loadCharacter() {
     document.getElementById('btn-cancel').addEventListener('click', () => {
       window.location.href = `/chat/${characterId}`;
     });
+
+    const allLorebooks  = lbAllRes.ok  ? (await lbAllRes.json()).lorebooks  || [] : [];
+    const assignedIds   = lbCharRes.ok ? (await lbCharRes.json()).lorebook_ids || [] : [];
+    renderLorebookPicker(allLorebooks, new Set(assignedIds));
   } catch (err) {
     showError(err.message || 'Erro ao carregar personagem.');
   }
+}
+
+function renderLorebookPicker(lorebooks, selectedIds) {
+  const picker = document.getElementById('lorebook-picker');
+  if (!lorebooks.length) {
+    picker.innerHTML = '<p class="text-secondary small mb-0">Nenhum lorebook criado ainda. <a href="/lorebooks" class="text-info">Criar lorebooks</a></p>';
+    return;
+  }
+  picker.innerHTML = lorebooks.map(lb => `
+    <label class="lb-picker-item">
+      <input type="checkbox" name="lorebook_ids" value="${lb.id}" ${selectedIds.has(lb.id) ? 'checked' : ''} />
+      <div>
+        <div class="lb-picker-name">${escHtml(lb.title)}</div>
+        <div class="lb-picker-kw">${lb.keywords ? lb.keywords : '<em>Sem keywords — sempre ativo</em>'}</div>
+      </div>
+    </label>
+  `).join('');
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 async function handleSubmit(event) {
@@ -78,15 +109,24 @@ async function handleSubmit(event) {
     body.avatar_link = avatarLink;
   }
 
-  try {
-    const response = await fetch(`/api/characters/${characterId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const result = await response.json();
+  const checkedIds = [...document.querySelectorAll('input[name="lorebook_ids"]:checked')].map(el => el.value);
 
-    if (!response.ok || !result.ok) throw new Error(result.message || 'Falha ao salvar alterações.');
+  try {
+    const [charRes, lbRes] = await Promise.all([
+      fetch(`/api/characters/${characterId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
+      fetch(`/api/characters/${characterId}/lorebooks`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lorebook_ids: checkedIds }),
+      }),
+    ]);
+
+    const result = await charRes.json();
+    if (!charRes.ok || !result.ok) throw new Error(result.message || 'Falha ao salvar alterações.');
 
     showSuccess('Alterações salvas! Redirecionando...');
     setTimeout(() => { window.location.href = `/chat/${characterId}`; }, 1200);

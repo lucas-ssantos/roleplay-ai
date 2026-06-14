@@ -43,6 +43,7 @@ src/
         chat.routes.js              ← GET /chat/:characterId + monta chatRouter de core/chat.js
         settings.routes.js          ← GET /settings, GET /api/presets, GET/POST /api/config
         viewdb.routes.js            ← GET /api/viewdb, GET /api/viewdb/tables, GET /api/viewdb/records
+        lorebook.routes.js          ← CRUD /api/lorebooks + GET/PUT /api/characters/:id/lorebooks
 
 public/
   index.html                        ← lista de personagens (cards clicáveis → /chat/:id)
@@ -54,6 +55,7 @@ public/
   sidebar.html                      ← sidebar reutilizável (carregada via fetch)
   check.html                        ← checagem de saúde (Ollama + DB)
   viewdb.html                       ← visualização do banco de dados
+  lorebooks.html                    ← listagem e gestão de lorebooks (world info)
   assets/
     css/
       styles.css                    ← estilos globais (glass cards, badges, botões, alerts, spin)
@@ -70,7 +72,7 @@ public/
         ui.js                       ← helpers de UI puros: scrollToBottom, renderBubbleText, showError, etc.
         events.js                   ← addBubble, rollback, edição inline, send, regenerate, initInputListeners
         loader.js                   ← init() (carrega personagem/conversa/mensagens), initImmersiveMode()
-      check.js / index.js / persona.js / new-character.js / edit-character.js / settings.js / viewdb.js
+      check.js / index.js / persona.js / new-character.js / edit-character.js / settings.js / viewdb.js / lorebooks.js
     uploads/                        ← avatares enviados por upload
 
 data/
@@ -85,6 +87,7 @@ config_recomendadas/
 contexto/
   prompt_builder                    ← diagrama da estrutura do prompt: system → memórias → lorebook → histórico
   estrutura_memoria                 ← tipos de memória (auto, manual, pinned, lorebook) e fluxo de contexto
+  lorebooks                         ← modelo de dados, fluxo de injeção, associação por personagem e boas práticas
 ```
 
 ## Banco de dados — tabelas principais
@@ -96,7 +99,8 @@ contexto/
 | `messages` | id, conversation_id, role (user/assistant/system), content, position |
 | `persona` | id='self', name, description, avatar_url (única linha) |
 | `memories` | id, conversation_id, type (auto/manual/pinned), content, keywords, is_pinned |
-| `lorebooks` | id, scope (global/character), character_id, title, content, keywords |
+| `lorebooks` | id, scope='global', title, content, keywords, insertion_order |
+| `character_lorebooks` | character_id, lorebook_id — many-to-many; se vazio para o personagem, usa todos os lorebooks |
 | `generation_config` | id='global', model, temperature, top_p, top_k, min_p, repeat_penalty, repeat_last_n, tfs_z, max_tokens, min_tokens, context_size, stream, seed, stop, num_ctx_messages |
 | `character_config` | override por personagem (mesmos campos + system_prompt, jailbreak) |
 | `conversation_config` | override por conversa |
@@ -149,6 +153,13 @@ POST /api/config            → salva config global
 GET  /api/presets           → presets de hardware (low/medium/high)
 GET  /api/viewdb/tables     → lista tabelas com contagem
 GET  /api/viewdb/records    → últimas 25 linhas de uma tabela (?table=X)
+GET    /api/lorebooks               → lista todos os lorebooks
+POST   /api/lorebooks               → cria lorebook
+GET    /api/lorebooks/:id           → busca por ID
+PUT    /api/lorebooks/:id           → edita lorebook
+DELETE /api/lorebooks/:id           → exclui lorebook (e remove associações)
+GET    /api/characters/:id/lorebooks → IDs dos lorebooks associados ao personagem
+PUT    /api/characters/:id/lorebooks → define associações (body: {lorebook_ids: [...]})
 ```
 
 ## Padrão do chat (streaming)

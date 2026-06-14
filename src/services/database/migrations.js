@@ -207,6 +207,17 @@ export async function migrate() {
     );
   `);
 
+  // ===== CHARACTER ↔ LOREBOOK (many-to-many) =====
+  db.run(`
+    CREATE TABLE IF NOT EXISTS character_lorebooks (
+      character_id TEXT NOT NULL,
+      lorebook_id  TEXT NOT NULL,
+      PRIMARY KEY (character_id, lorebook_id),
+      FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE,
+      FOREIGN KEY (lorebook_id)  REFERENCES lorebooks(id)  ON DELETE CASCADE
+    );
+  `);
+
   // ===== INDEXES =====
   db.run(`CREATE INDEX IF NOT EXISTS idx_conv_char ON conversations(character_id);`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_msg_conv ON messages(conversation_id);`);

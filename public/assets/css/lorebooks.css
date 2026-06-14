@@ -1,0 +1,159 @@
+/* ── Lorebook cards ────────────────────────────────────────────── */
+
+.lb-card {
+  cursor: default;
+  transition: border-color 0.18s, transform 0.18s;
+}
+
+.lb-card:hover {
+  border-color: rgba(56, 189, 248, 0.22) !important;
+  transform: translateY(-2px);
+}
+
+.lb-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  word-break: break-word;
+}
+
+.lb-keywords-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.lb-keyword {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  color: #7dd3fc;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.73rem;
+}
+
+.lb-keyword-always {
+  background: rgba(167, 139, 250, 0.1);
+  border-color: rgba(167, 139, 250, 0.25);
+  color: #c4b5fd;
+}
+
+.lb-preview {
+  font-size: 0.83rem;
+  color: #94a3b8;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lb-order {
+  font-size: 0.72rem;
+  color: #334155;
+  margin-top: 0.2rem;
+}
+
+/* ── Card action buttons ─────────────────────────────────────────── */
+
+.lb-actions {
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+
+.lb-card:hover .lb-actions {
+  opacity: 1;
+}
+
+.lb-btn {
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  background: rgba(15, 23, 42, 0.8);
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+}
+
+.lb-btn-edit {
+  color: #64748b;
+}
+.lb-btn-edit:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #a5b4fc;
+}
+
+.lb-btn-delete {
+  color: #64748b;
+}
+.lb-btn-delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+/* ── Modal textarea ──────────────────────────────────────────────── */
+
+.lb-textarea {
+  min-height: 160px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* ── Character lorebook picker (in edit-character) ───────────────── */
+
+.lb-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.15) transparent;
+}
+
+.lb-picker-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  background: rgba(15, 23, 42, 0.5);
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+
+.lb-picker-item:hover {
+  border-color: rgba(56, 189, 248, 0.25);
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.lb-picker-item input[type="checkbox"] {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+  accent-color: #38bdf8;
+}
+
+.lb-picker-name {
+  font-size: 0.87rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.lb-picker-kw {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.1rem;
+}
