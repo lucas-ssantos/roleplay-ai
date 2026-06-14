@@ -4,3 +4,4 @@ data/*.sqlite
 .env
 *.log
 data/logs/
+public/assets/uploads/*
