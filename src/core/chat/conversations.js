@@ -4,6 +4,8 @@ import {
     createConversation, getConversation, getLatestConversationForCharacter,
     addMessage, getConversationMessages, resetConversation,
 } from "../../services/database/queries.js";
+import { resolveConfig } from "./helpers.js";
+import { extractAndSaveAutoMemories } from "../memory/index.js";
 
 const router = Router();
 
@@ -95,6 +97,27 @@ router.post("/conversations/:id/reset", (req, res) => {
         }
 
         res.json({ ok: true, first_message: firstMsg });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+});
+
+// ── POST /api/conversations/:id/memories/generate ────────────────────────────
+router.post("/conversations/:id/memories/generate", async (req, res) => {
+    try {
+        const { messages } = req.body;
+        if (!Array.isArray(messages) || messages.length < 2)
+            return res.status(400).json({ ok: false, message: "Selecione ao menos 2 mensagens." });
+
+        const conv = getConversation(req.params.id);
+        if (!conv) return res.status(404).json({ ok: false, message: "Conversa não encontrada." });
+
+        const character = getCharacter(conv.character_id);
+        const persona   = getPersona();
+        const config    = resolveConfig(conv.character_id);
+
+        const created = await extractAndSaveAutoMemories(req.params.id, messages, character, persona, config);
+        res.json({ ok: true, created: created.length });
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message });
     }

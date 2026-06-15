@@ -57,6 +57,9 @@
             <a href="/" id="nav-new-chat" style="color:#38bdf8;">
               <i class="bi bi-plus-circle"></i> Nova conversa
             </a>
+            <a href="#" id="nav-select-messages" style="color:#a5b4fc;">
+              <i class="bi bi-ui-checks"></i> Selecionar mensagens
+            </a>
             <a href="#" id="nav-reset-chat" style="color:#f87171;">
               <i class="bi bi-trash3"></i> Reiniciar conversa
             </a>
@@ -189,6 +192,15 @@
       </header>
 
       <main class="messages" id="messages"></main>
+
+      <div id="selection-bar">
+        <span id="selection-count">Nenhuma selecionada</span>
+        <div style="flex:1;"></div>
+        <button id="selection-cancel-btn" type="button">Cancelar</button>
+        <button id="selection-generate-btn" type="button" disabled>
+          <i class="bi bi-brain"></i> Gerar memória
+        </button>
+      </div>
 
       <footer class="input-area">
         <textarea

@@ -26,6 +26,7 @@ export function addBubble(role, content, messageId = null) {
   const isUser = role === 'user';
   const row = document.createElement('div');
   row.className = `msg-row msg-row-${isUser ? 'user' : 'char'}`;
+  row.dataset.messageId = messageId ?? '';
 
   const bubble = document.createElement('div');
   bubble.className = `bubble bubble-${isUser ? 'user' : 'char'}`;
@@ -269,6 +270,7 @@ export async function regenerateLastMessage(rowEl) {
 
         if (data.done && data.message_id) {
           attachRollbackBtn(rowEl, data.message_id);
+          rowEl.dataset.messageId = data.message_id;
         }
       }
     }
@@ -404,8 +406,14 @@ export async function sendMessage() {
         }
 
         if (data.done) {
-          if (data.message_id && charRow)  attachRollbackBtn(charRow, data.message_id);
-          if (data.user_message_id && userRow) attachRollbackBtn(userRow, data.user_message_id);
+          if (data.message_id && charRow) {
+            attachRollbackBtn(charRow, data.message_id);
+            charRow.dataset.messageId = data.message_id;
+          }
+          if (data.user_message_id && userRow) {
+            attachRollbackBtn(userRow, data.user_message_id);
+            userRow.dataset.messageId = data.user_message_id;
+          }
           updateLastCharRow();
           if (data.pinned_memories_created > 0) showPinnedMemoryToast(data.pinned_memories_created);
         }
