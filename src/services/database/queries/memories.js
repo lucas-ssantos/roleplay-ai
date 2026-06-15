@@ -49,6 +49,32 @@ export function getPinnedMemories(conversationId) {
   return result[0].values.map(mapMemory);
 }
 
+export function updateMemory(id, { content, keywords, summary, type } = {}) {
+  const db = getDB();
+  const sets = [];
+  const vals = [];
+  if (content  !== undefined && content  !== null) { sets.push("content = ?");  vals.push(content); }
+  if (keywords !== undefined)                      { sets.push("keywords = ?"); vals.push(keywords); }
+  if (summary  !== undefined)                      { sets.push("summary = ?");  vals.push(summary); }
+  if (type     !== undefined) {
+    sets.push("type = ?");     vals.push(type);
+    sets.push("is_pinned = ?"); vals.push(type === "pinned" ? 1 : 0);
+  }
+  if (!sets.length) return false;
+  sets.push("updated_at = ?"); vals.push(localDatetime());
+  vals.push(id);
+  db.run(`UPDATE memories SET ${sets.join(", ")} WHERE id = ?`, vals);
+  saveDB();
+  return true;
+}
+
+export function deleteMemory(id) {
+  const db = getDB();
+  db.run(`DELETE FROM memories WHERE id = ?`, [id]);
+  saveDB();
+  return true;
+}
+
 export function getMemoriesByType(conversationId, type) {
   const db = getDB();
   const result = db.exec(

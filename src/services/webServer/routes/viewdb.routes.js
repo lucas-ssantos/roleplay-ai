@@ -1,6 +1,7 @@
 import { Router } from "express";
 import path from "path";
 import { getDB } from "../../database/db.js";
+import { updateMemory, deleteMemory } from "../../database/queries.js";
 
 const publicPath = path.resolve(process.cwd(), "public");
 
@@ -154,6 +155,32 @@ router.get("/api/viewdb/records", (req, res) => {
 
         const { columns, rows } = getTableLastRows(table, 25);
         res.json({ ok: true, table, total: getTableRowCount(table), columns, rows });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+});
+
+router.patch("/api/memories/:id", (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!isValidUUID(id)) return res.status(400).json({ ok: false, message: "ID inválido." });
+        const { content, keywords, summary, type } = req.body;
+        if (type !== undefined && !["pinned", "auto", "manual"].includes(type))
+            return res.status(400).json({ ok: false, message: "Tipo inválido. Use: pinned, auto, manual." });
+        const updated = updateMemory(id, { content, keywords, summary, type });
+        if (!updated) return res.status(400).json({ ok: false, message: "Nenhum campo para atualizar." });
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+});
+
+router.delete("/api/memories/:id", (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!isValidUUID(id)) return res.status(400).json({ ok: false, message: "ID inválido." });
+        deleteMemory(id);
+        res.json({ ok: true });
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message });
     }

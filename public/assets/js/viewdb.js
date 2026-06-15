@@ -189,24 +189,164 @@ function renderMemories(type) {
   }
 
   const configs = {
-    pinned: { icon: 'bi-pin-fill',    cls: 'vdb-mem-pinned', label: 'Fixada' },
-    auto:   { icon: 'bi-cpu',         cls: 'vdb-mem-auto',   label: 'Auto' },
-    manual: { icon: 'bi-pencil-fill', cls: 'vdb-mem-manual', label: 'Manual' },
+    pinned: { icon: 'bi-pin-fill',    cls: 'vdb-mem-pinned' },
+    auto:   { icon: 'bi-cpu',         cls: 'vdb-mem-auto'   },
+    manual: { icon: 'bi-pencil-fill', cls: 'vdb-mem-manual' },
   };
   const cfg = configs[type];
 
   memsEl.innerHTML = list.map(m => `
-    <div class="vdb-memory ${cfg.cls}">
+    <div class="vdb-memory ${cfg.cls}" data-mem-id="${m.id}" data-mem-type="${type}">
       <div class="vdb-mem-header">
         <i class="bi ${cfg.icon}"></i>
         ${m.keywords ? `<span class="vdb-mem-keywords">${escape(m.keywords)}</span>` : ''}
         ${m.relevance_weight && m.relevance_weight !== 1 ? `<span class="vdb-mem-weight">peso ${m.relevance_weight}</span>` : ''}
-        <span class="vdb-mem-date ms-auto">${formatDate(m.created_at)}</span>
+        <div class="vdb-mem-actions">
+          <select class="vdb-type-sel" title="Mudar tipo">
+            <option value="pinned"${type === 'pinned' ? ' selected' : ''}>📌 Fixada</option>
+            <option value="auto"${type === 'auto' ? ' selected' : ''}>🤖 Auto</option>
+            <option value="manual"${type === 'manual' ? ' selected' : ''}>✏️ Manual</option>
+          </select>
+          <button class="vdb-mem-btn-edit" title="Editar"><i class="bi bi-pencil"></i></button>
+          <button class="vdb-mem-btn-del" title="Excluir"><i class="bi bi-trash3"></i></button>
+        </div>
       </div>
-      <div class="vdb-mem-content">${escape(m.content)}</div>
-      ${m.summary ? `<div class="vdb-mem-summary"><i class="bi bi-card-text me-1"></i>${escape(m.summary)}</div>` : ''}
+      <div class="vdb-mem-view">
+        <div class="vdb-mem-content">${escape(m.content)}</div>
+        ${m.summary ? `<div class="vdb-mem-summary"><i class="bi bi-card-text me-1"></i>${escape(m.summary)}</div>` : ''}
+        <div class="vdb-mem-date-small">${formatDate(m.created_at)}</div>
+      </div>
+      <div class="vdb-mem-edit-form" style="display:none;">
+        <textarea class="vdb-ef-content" rows="3">${escape(m.content)}</textarea>
+        <input class="vdb-ef-keywords" type="text" placeholder="Keywords" value="${escape(m.keywords || '')}" />
+        <input class="vdb-ef-summary" type="text" placeholder="Resumo (opcional)" value="${escape(m.summary || '')}" />
+        <div class="vdb-ef-actions">
+          <button class="vdb-btn-cancel-edit" type="button">Cancelar</button>
+          <button class="vdb-btn-save-edit" type="button">Salvar</button>
+        </div>
+      </div>
     </div>
   `).join('');
+}
+
+function showMemError(msg) {
+  const el = document.createElement('div');
+  el.className = 'vdb-mem-error';
+  el.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>${escape(msg)}`;
+  memsEl.prepend(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function initMemoryActions() {
+  memsEl.addEventListener('change', async e => {
+    const sel = e.target.closest('.vdb-type-sel');
+    if (!sel) return;
+    const card    = sel.closest('.vdb-memory');
+    const id      = card.dataset.memId;
+    const oldType = card.dataset.memType;
+    const newType = sel.value;
+    if (oldType === newType) return;
+
+    try {
+      const res  = await fetch(`/api/memories/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: newType }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message);
+
+      const idx = currentMemories[oldType].findIndex(m => m.id === id);
+      if (idx !== -1) {
+        const [mem] = currentMemories[oldType].splice(idx, 1);
+        mem.type     = newType;
+        mem.is_pinned = newType === 'pinned';
+        currentMemories[newType].push(mem);
+      }
+      renderMemoryTabs(currentMemories);
+      renderMemories(activeMemType);
+    } catch (err) {
+      showMemError(err.message);
+      sel.value = oldType;
+    }
+  });
+
+  memsEl.addEventListener('click', async e => {
+    if (e.target.closest('.vdb-mem-btn-edit')) {
+      const card = e.target.closest('.vdb-memory');
+      card.querySelector('.vdb-mem-view').style.display = 'none';
+      card.querySelector('.vdb-mem-edit-form').style.display = 'flex';
+      card.querySelector('.vdb-ef-content').focus();
+      return;
+    }
+
+    if (e.target.closest('.vdb-btn-cancel-edit')) {
+      const card = e.target.closest('.vdb-memory');
+      card.querySelector('.vdb-mem-view').style.display = '';
+      card.querySelector('.vdb-mem-edit-form').style.display = 'none';
+      return;
+    }
+
+    if (e.target.closest('.vdb-btn-save-edit')) {
+      const btn      = e.target.closest('.vdb-btn-save-edit');
+      const card     = btn.closest('.vdb-memory');
+      const id       = card.dataset.memId;
+      const memType  = card.dataset.memType;
+      const content  = card.querySelector('.vdb-ef-content').value.trim();
+      const keywords = card.querySelector('.vdb-ef-keywords').value.trim();
+      const summary  = card.querySelector('.vdb-ef-summary').value.trim();
+      if (!content) return;
+
+      btn.disabled = true;
+      try {
+        const res  = await fetch(`/api/memories/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content, keywords: keywords || null, summary: summary || null }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message);
+
+        const mem = currentMemories[memType]?.find(m => m.id === id);
+        if (mem) { mem.content = content; mem.keywords = keywords || null; mem.summary = summary || null; }
+        renderMemories(activeMemType);
+      } catch (err) {
+        showMemError(err.message);
+        btn.disabled = false;
+      }
+      return;
+    }
+
+    const delBtn = e.target.closest('.vdb-mem-btn-del');
+    if (!delBtn) return;
+
+    if (!delBtn.classList.contains('confirm')) {
+      delBtn.dataset.delOrig = delBtn.innerHTML;
+      delBtn.classList.add('confirm');
+      delBtn.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Confirmar';
+      setTimeout(() => {
+        if (delBtn.classList.contains('confirm')) {
+          delBtn.classList.remove('confirm');
+          delBtn.innerHTML = delBtn.dataset.delOrig;
+        }
+      }, 3000);
+      return;
+    }
+
+    const card    = delBtn.closest('.vdb-memory');
+    const id      = card.dataset.memId;
+    const memType = card.dataset.memType;
+    try {
+      const res  = await fetch(`/api/memories/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message);
+      currentMemories[memType] = currentMemories[memType].filter(m => m.id !== id);
+      renderMemoryTabs(currentMemories);
+      renderMemories(activeMemType);
+    } catch (err) {
+      showMemError(err.message);
+    }
+  });
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -251,5 +391,6 @@ document.getElementById('mem-tabs').addEventListener('click', e => {
 
 window.addEventListener('load', async () => {
   await loadSidebar();
+  initMemoryActions();
   loadOverview();
 });
