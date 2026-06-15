@@ -124,10 +124,14 @@ export async function migrate() {
       stop TEXT,
       num_ctx_messages INTEGER DEFAULT 20,
       min_tokens INTEGER DEFAULT 60,
+      memory_interval INTEGER DEFAULT 5,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // Migration para DBs existentes sem a coluna memory_interval
+  try { db.run(`ALTER TABLE generation_config ADD COLUMN memory_interval INTEGER DEFAULT 5`); } catch {}
 
   // Seed initial row from appConfig.defaults (INSERT OR IGNORE preserves user-saved config)
   const d = appConfig.defaults;
@@ -135,13 +139,13 @@ export async function migrate() {
     INSERT OR IGNORE INTO generation_config
       (id, model, temperature, top_p, top_k, min_p,
        repeat_penalty, repeat_last_n, tfs_z, max_tokens,
-       context_size, stream, seed, stop, num_ctx_messages, min_tokens)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       context_size, stream, seed, stop, num_ctx_messages, min_tokens, memory_interval)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     'global', d.model, d.temperature, d.top_p, d.top_k, d.min_p,
     d.repeat_penalty, d.repeat_last_n, d.tfs_z, d.max_tokens,
     d.context_size, d.stream ? 1 : 0, d.seed,
-    JSON.stringify(d.stop), d.num_ctx_messages, d.min_tokens,
+    JSON.stringify(d.stop), d.num_ctx_messages, d.min_tokens, d.memory_interval ?? 5,
   ]);
 
   // ===== CHARACTER-SPECIFIC CONFIG =====

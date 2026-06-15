@@ -10,7 +10,8 @@ export function getGenerationConfig(level = "global", id = null) {
     const result = db.exec(
       `SELECT model, temperature, top_p, top_k, min_p, repeat_penalty, repeat_last_n,
               tfs_z, max_tokens, context_size, stream, seed, stop, num_ctx_messages,
-              COALESCE(min_tokens, 60) AS min_tokens
+              COALESCE(min_tokens, 60) AS min_tokens,
+              COALESCE(memory_interval, 5) AS memory_interval
        FROM generation_config WHERE id = 'global'`
     );
     if (!result.length || !result[0].values.length) return null;
@@ -20,6 +21,7 @@ export function getGenerationConfig(level = "global", id = null) {
       repeat_penalty: row[5], repeat_last_n: row[6], tfs_z: row[7], max_tokens: row[8],
       context_size: row[9], stream: row[10] === 1, seed: row[11],
       stop: parseStop(row[12]), num_ctx_messages: row[13], min_tokens: row[14],
+      memory_interval: row[15] ?? 5,
     };
   }
 
@@ -59,15 +61,18 @@ export function setGenerationConfig(level = "global", id = null, config = {}) {
 
   if (level === "global") {
     const { model, temperature, top_p, top_k, min_p, repeat_penalty, repeat_last_n,
-            tfs_z, max_tokens, context_size, stream, seed, stop, num_ctx_messages, min_tokens } = config;
+            tfs_z, max_tokens, context_size, stream, seed, stop, num_ctx_messages,
+            min_tokens, memory_interval } = config;
     db.run(
       `INSERT OR REPLACE INTO generation_config
        (id, model, temperature, top_p, top_k, min_p, repeat_penalty, repeat_last_n,
-        tfs_z, max_tokens, context_size, stream, seed, stop, num_ctx_messages, min_tokens, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        tfs_z, max_tokens, context_size, stream, seed, stop, num_ctx_messages, min_tokens,
+        memory_interval, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ["global", model, temperature, top_p, top_k, min_p, repeat_penalty, repeat_last_n,
        tfs_z, max_tokens, context_size, toStream(stream), toSeed(seed),
-       toStop(stop), num_ctx_messages || 20, min_tokens ?? 60, now]
+       toStop(stop), num_ctx_messages || 20, min_tokens ?? 60,
+       memory_interval ?? 5, now]
     );
   } else if (level === "character") {
     const { model, temperature, top_p, top_k, min_p, repeat_penalty, repeat_last_n,

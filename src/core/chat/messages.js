@@ -7,7 +7,7 @@ import {
 } from "../../services/database/queries.js";
 import { buildPromptMessages } from "../promptBuilder.js";
 import { resolveConfig, dynamicMaxTokens, startSSE, handleSSEError, streamOllama } from "./helpers.js";
-import { getMemoriesForPrompt, extractAndSavePinnedMemories } from "../memory/index.js";
+import { getMemoriesForPrompt, extractAndSavePinnedMemories, extractAndSaveAutoMemories } from "../memory/index.js";
 import { logConversationTurn } from "../logger.js";
 
 const router = Router();
@@ -63,10 +63,18 @@ router.post("/conversations/:id/messages", async (req, res) => {
             });
 
             let pinnedMemoriesCreated = 0;
+            let autoMemoriesCreated   = 0;
+
             if (fullContent && nextPos % 5 === 0) {
                 const msgsForExtraction = getLastNMessages(conversationId, 10);
                 const created = await extractAndSavePinnedMemories(conversationId, msgsForExtraction, character, config);
                 pinnedMemoriesCreated = created.length;
+            }
+
+            const memInterval = config.memory_interval ?? 5;
+            if (fullContent && nextPos > 0 && nextPos % memInterval === 0) {
+                const msgsForAuto = getLastNMessages(conversationId, memInterval * 2);
+                extractAndSaveAutoMemories(conversationId, msgsForAuto, character, persona, config).catch(() => {});
             }
 
             return {

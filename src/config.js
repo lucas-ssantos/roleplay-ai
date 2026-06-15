@@ -28,6 +28,7 @@ export const appConfig = {
         min_tokens:       parseInt(process.env.DEFAULT_MIN_TOKENS)               || 60,
         context_size:     parseInt(process.env.DEFAULT_CONTEXT_SIZE)             || 8192,
         num_ctx_messages: parseInt(process.env.DEFAULT_NUM_CTX_MESSAGES)         || 20,
+        memory_interval:  parseInt(process.env.MEMORY_INTERVAL)                  || 5,
         seed:             parseInt(process.env.DEFAULT_SEED ?? "-1")             || -1,
         stream:           true,
         stop: process.env.DEFAULT_STOP
