@@ -1,4 +1,5 @@
 import { getDB, saveDB } from "../db.js";
+import { localDatetime } from "../../../utils/datetime.js";
 
 export function getPersona() {
   const db = getDB();
@@ -19,8 +20,8 @@ export function savePersona({ name, description = null, avatar_url = null }) {
   const db = getDB();
   db.run(
     `INSERT OR REPLACE INTO persona (id, name, description, avatar_url, updated_at)
-     VALUES ('self', ?, ?, ?, CURRENT_TIMESTAMP)`,
-    [name, description, avatar_url]
+     VALUES ('self', ?, ?, ?, ?)`,
+    [name, description, avatar_url, localDatetime()]
   );
   saveDB();
   return "self";

@@ -1,13 +1,14 @@
 import { getDB, saveDB } from "../db.js";
 import { v4 as uuidv4 } from "uuid";
+import { localDatetime } from "../../../utils/datetime.js";
 
 export function addMessage(conversationId, role, content, position = null) {
   const db = getDB();
   const id = uuidv4();
   db.run(
-    `INSERT INTO messages (id, conversation_id, role, content, position)
-     VALUES (?, ?, ?, ?, ?)`,
-    [id, conversationId, role, content, position]
+    `INSERT INTO messages (id, conversation_id, role, content, position, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [id, conversationId, role, content, position, localDatetime()]
   );
   saveDB();
   return id;

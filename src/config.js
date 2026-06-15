@@ -6,6 +6,7 @@ const host = process.env.OLLAMA_HOST || "http://127.0.0.1:11434";
 export const appConfig = {
     port: parseInt(process.env.PORT) || 3000,
     nodeEnv: process.env.NODE_ENV || "development",
+    timezone: process.env.TZ || "America/Sao_Paulo",
 
     ollama: {
         host,

@@ -1,13 +1,15 @@
 import { getDB, saveDB } from "../db.js";
 import { v4 as uuidv4 } from "uuid";
+import { localDatetime } from "../../../utils/datetime.js";
 
 export function createConversation(characterId, userPersona = null, title = null) {
   const db = getDB();
   const id = uuidv4();
+  const now = localDatetime();
   db.run(
-    `INSERT INTO conversations (id, character_id, user_persona, title)
-     VALUES (?, ?, ?, ?)`,
-    [id, characterId, userPersona, title]
+    `INSERT INTO conversations (id, character_id, user_persona, title, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [id, characterId, userPersona, title, now, now]
   );
   saveDB();
   return id;

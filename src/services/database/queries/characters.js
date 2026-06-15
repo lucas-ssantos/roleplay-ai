@@ -1,13 +1,15 @@
 import { getDB, saveDB } from "../db.js";
 import { v4 as uuidv4 } from "uuid";
+import { localDatetime } from "../../../utils/datetime.js";
 
 export function createCharacter(name, description, personality, avatarUrl = null, scenario = null, firstMessage = null) {
   const db = getDB();
   const id = uuidv4();
+  const now = localDatetime();
   db.run(
-    `INSERT INTO characters (id, name, description, personality, avatar_url, scenario, first_message)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [id, name, description, personality, avatarUrl, scenario, firstMessage]
+    `INSERT INTO characters (id, name, description, personality, avatar_url, scenario, first_message, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, name, description, personality, avatarUrl, scenario, firstMessage, now, now]
   );
   saveDB();
   return id;
@@ -61,7 +63,8 @@ export function updateCharacter(id, { name, description, personality, avatar_url
   if (first_message !== undefined) { sets.push("first_message = ?"); vals.push(first_message); }
 
   if (sets.length === 0) return false;
-  sets.push("updated_at = CURRENT_TIMESTAMP");
+  sets.push("updated_at = ?");
+  vals.push(localDatetime());
   vals.push(id);
 
   db.run(`UPDATE characters SET ${sets.join(", ")} WHERE id = ?`, vals);

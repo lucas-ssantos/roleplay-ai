@@ -1,5 +1,6 @@
 import { getDB, saveDB } from "../db.js";
 import { v4 as uuidv4 } from "uuid";
+import { localDatetime } from "../../../utils/datetime.js";
 
 const mapLorebook = (row) => ({
   id: row[0],
@@ -16,10 +17,11 @@ const mapLorebook = (row) => ({
 export function createLorebook(title, content, keywords = null, scope = "global", characterId = null) {
   const db = getDB();
   const id = uuidv4();
+  const now = localDatetime();
   db.run(
-    `INSERT INTO lorebooks (id, scope, character_id, title, content, keywords)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [id, scope, characterId, title, content, keywords]
+    `INSERT INTO lorebooks (id, scope, character_id, title, content, keywords, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, scope, characterId, title, content, keywords, now, now]
   );
   saveDB();
   return id;
@@ -81,7 +83,8 @@ export function updateLorebook(id, { title, content, keywords, insertion_order }
   if (keywords        !== undefined) { sets.push("keywords = ?");        vals.push(keywords); }
   if (insertion_order !== undefined) { sets.push("insertion_order = ?"); vals.push(insertion_order); }
   if (!sets.length) return false;
-  sets.push("updated_at = CURRENT_TIMESTAMP");
+  sets.push("updated_at = ?");
+  vals.push(localDatetime());
   vals.push(id);
   db.run(`UPDATE lorebooks SET ${sets.join(", ")} WHERE id = ?`, vals);
   saveDB();

@@ -1,5 +1,6 @@
 import { getDB, saveDB } from "../db.js";
 import { v4 as uuidv4 } from "uuid";
+import { localDatetime } from "../../../utils/datetime.js";
 
 const mapMemory = (row) => ({
   id: row[0],
@@ -18,10 +19,11 @@ const mapMemory = (row) => ({
 export function createMemory(conversationId, type, content, keywords = null, relevanceWeight = 1.0, isPinned = false, summary = null) {
   const db = getDB();
   const id = uuidv4();
+  const now = localDatetime();
   db.run(
-    `INSERT INTO memories (id, conversation_id, type, content, summary, keywords, is_pinned, relevance_weight)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, conversationId, type, content, summary, keywords, isPinned ? 1 : 0, relevanceWeight]
+    `INSERT INTO memories (id, conversation_id, type, content, summary, keywords, is_pinned, relevance_weight, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, conversationId, type, content, summary, keywords, isPinned ? 1 : 0, relevanceWeight, now, now]
   );
   saveDB();
   return id;

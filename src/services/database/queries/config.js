@@ -1,4 +1,5 @@
 import { getDB, saveDB } from "../db.js";
+import { localDatetime } from "../../../utils/datetime.js";
 
 const parseStop = (raw) =>
   raw ? (typeof raw === "string" ? raw.split(",").map((s) => s.trim()) : raw) : [];
@@ -54,7 +55,7 @@ export function getGenerationConfig(level = "global", id = null) {
 
 export function setGenerationConfig(level = "global", id = null, config = {}) {
   const db = getDB();
-  const now = new Date().toISOString();
+  const now = localDatetime();
   const toStop = (v) => (Array.isArray(v) ? v.join(", ") : v || "");
   const toStream = (v) => (v === 1 || v === true || v === "1" ? 1 : 0);
   const toSeed = (v) => (v !== null && v !== undefined ? v : -1);
