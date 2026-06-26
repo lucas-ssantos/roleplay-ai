@@ -9,7 +9,7 @@ async function populateRecentChars() {
       const avatar = char.avatar_url
         ? `<img class="recent-char-avatar" src="${char.avatar_url}" alt="" />`
         : `<span class="recent-char-placeholder"><i class="bi bi-person-fill"></i></span>`;
-      return `<a class="recent-char-link" href="/chat/${char.id}">${avatar}<span class="recent-char-name">${char.name}</span></a>`;
+      return `<a class="recent-char-link" href="/character/${char.id}">${avatar}<span class="recent-char-name">${char.name}</span></a>`;
     }).join('');
 
     document.querySelectorAll('.recent-chars-list').forEach(el => {

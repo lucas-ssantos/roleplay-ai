@@ -1,23 +1,34 @@
-import { characterId, state, dom } from './state.js';
+import { conversationId, state, dom } from './state.js';
 import { showError, setInputEnabled, scrollToBottom, updateLastCharRow } from './ui.js';
 import { addBubble, initInputListeners } from './events.js';
 
 export async function init() {
-  if (!characterId) {
-    dom.charNameEl.textContent = 'Personagem não encontrado';
-    showError('URL inválida — nenhum personagem especificado.');
+  if (!conversationId) {
+    dom.charNameEl.textContent = 'Conversa não encontrada';
+    showError('URL inválida — nenhuma conversa especificada.');
     return;
   }
 
   try {
-    const charRes  = await fetch(`/api/characters/${characterId}`);
+    // 1) A conversa traz o personagem + cenário + mensagem inicial dela.
+    const convRes  = await fetch(`/api/conversations/${conversationId}`);
+    const convData = await convRes.json();
+    if (!convData.ok) throw new Error(convData.message);
+    const conversation = convData.conversation;
+    state.conversationId = conversation.id;
+    state.characterId    = conversation.character_id;
+
+    // 2) Dados do personagem.
+    const charRes  = await fetch(`/api/characters/${state.characterId}`);
     const charData = await charRes.json();
     if (!charData.ok) throw new Error(charData.message);
     const character = charData.character;
 
+    const scenarioText = conversation.scenario || conversation.title || '';
+
     document.title = `${character.name} — OpenRP AI`;
     dom.charNameEl.textContent = character.name;
-    if (character.scenario) dom.scenarioEl.textContent = character.scenario;
+    if (scenarioText) dom.scenarioEl.textContent = scenarioText;
 
     if (character.avatar_url) {
       dom.bg.style.backgroundImage = `url('${character.avatar_url}')`;
@@ -26,11 +37,16 @@ export async function init() {
     }
 
     const editBtn = document.getElementById('edit-char-btn');
-    if (editBtn) editBtn.href = `/character/${characterId}/edit`;
+    if (editBtn) editBtn.href = `/character/${state.characterId}/edit`;
+
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) backBtn.href = `/character/${state.characterId}`;
+    const newChatBtn = document.getElementById('nav-new-chat');
+    if (newChatBtn) newChatBtn.href = `/character/${state.characterId}`;
 
     document.getElementById('nav-char-name').textContent = character.name;
-    if (character.scenario) {
-      document.getElementById('nav-char-scenario').textContent = character.scenario;
+    if (scenarioText) {
+      document.getElementById('nav-char-scenario').textContent = scenarioText;
     }
     if (character.avatar_url) {
       const navAvatar = document.getElementById('nav-avatar');
@@ -40,11 +56,6 @@ export async function init() {
     }
 
     populateRecentChars();
-
-    const convRes  = await fetch(`/api/characters/${characterId}/conversation`);
-    const convData = await convRes.json();
-    if (!convData.ok) throw new Error(convData.message);
-    state.conversationId = convData.conversation.id;
 
     const msgsRes  = await fetch(`/api/conversations/${state.conversationId}/messages`);
     const msgsData = await msgsRes.json();

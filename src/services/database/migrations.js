@@ -19,27 +19,36 @@ export async function migrate() {
   }
 
   // ===== CHARACTERS =====
+  // Personagem carrega apenas: foto, descrição física, personalidade (e lorebooks via tabela própria).
+  // Cenário e mensagem inicial vivem na conversa (ver tabela conversations).
   db.run(`
     CREATE TABLE IF NOT EXISTS characters (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       description TEXT,
       personality TEXT,
+      likes TEXT,
+      dislikes TEXT,
       avatar_url TEXT,
-      scenario TEXT,
-      first_message TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
+  // Migration para DBs criados antes das colunas likes/dislikes
+  try { db.run(`ALTER TABLE characters ADD COLUMN likes TEXT`); } catch {}
+  try { db.run(`ALTER TABLE characters ADD COLUMN dislikes TEXT`); } catch {}
+
   // ===== CONVERSATIONS =====
+  // Cada conversa pertence a um personagem e carrega seu próprio cenário + mensagem inicial.
   db.run(`
     CREATE TABLE IF NOT EXISTS conversations (
       id TEXT PRIMARY KEY,
       character_id TEXT NOT NULL,
       user_persona TEXT,
       title TEXT,
+      scenario TEXT,
+      first_message TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (character_id) REFERENCES characters(id)

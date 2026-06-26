@@ -22,6 +22,11 @@ export default function characterRouter(uploadDir) {
         res.sendFile(path.join(publicPath, "edit-character.html"));
     });
 
+    // Página do personagem: lista de conversas + criação de nova conversa.
+    router.get("/character/:id", (_req, res) => {
+        res.sendFile(path.join(publicPath, "conversations.html"));
+    });
+
     router.get("/api/characters", (_req, res) => {
         try {
             res.json({ ok: true, characters: getAllCharacters() });
@@ -32,7 +37,7 @@ export default function characterRouter(uploadDir) {
 
     router.post("/api/characters", (req, res) => {
         try {
-            const { name, description, personality, scenario, first_message, avatar_link, avatar_upload, avatar_filename } = req.body;
+            const { name, description, personality, likes, dislikes, avatar_link, avatar_upload, avatar_filename } = req.body;
             if (!name) return res.status(400).json({ ok: false, message: "O nome do personagem é obrigatório." });
 
             let avatarUrl = null;
@@ -53,8 +58,8 @@ export default function characterRouter(uploadDir) {
                 description || "",
                 personality || "",
                 avatarUrl,
-                scenario || null,
-                first_message || null
+                likes || null,
+                dislikes || null
             );
 
             res.json({ ok: true, id: characterId });
@@ -87,7 +92,7 @@ export default function characterRouter(uploadDir) {
             const existing = getCharacter(id);
             if (!existing) return res.status(404).json({ ok: false, message: "Personagem não encontrado." });
 
-            const { name, description, personality, scenario, first_message, avatar_link, avatar_upload, avatar_filename } = req.body;
+            const { name, description, personality, likes, dislikes, avatar_link, avatar_upload, avatar_filename } = req.body;
 
             if (name !== undefined && !name.trim()) {
                 return res.status(400).json({ ok: false, message: "O nome do personagem não pode ser vazio." });
@@ -107,8 +112,8 @@ export default function characterRouter(uploadDir) {
                 name:          name          !== undefined ? name.trim()          : undefined,
                 description:   description   !== undefined ? description           : undefined,
                 personality:   personality   !== undefined ? personality           : undefined,
-                scenario:      scenario      !== undefined ? scenario              : undefined,
-                first_message: first_message !== undefined ? first_message         : undefined,
+                likes:         likes         !== undefined ? likes                 : undefined,
+                dislikes:      dislikes      !== undefined ? dislikes              : undefined,
                 avatar_url:    avatarUrl,
             });
 

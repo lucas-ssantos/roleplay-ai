@@ -5,7 +5,7 @@ import chatApiRouter from "../../../core/chat.js";
 const publicPath = path.resolve(process.cwd(), "public");
 const router = Router();
 
-router.get("/chat/:characterId", (_req, res) => {
+router.get("/chat/:conversationId", (_req, res) => {
     res.sendFile(path.join(publicPath, "chat.html"));
 });
 

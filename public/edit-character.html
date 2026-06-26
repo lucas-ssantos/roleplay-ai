@@ -30,30 +30,30 @@
             <div class="glass-card card p-4">
               <form id="character-form">
 
-                <div class="row g-3 mb-3">
-                  <div class="col-12 col-sm-6">
-                    <label class="form-label" for="name">Nome <span class="text-danger">*</span></label>
-                    <input id="name" name="name" type="text" class="form-control" placeholder="Nome único do personagem" required />
-                  </div>
-                  <div class="col-12 col-sm-6">
-                    <label class="form-label" for="scenario">Cenário</label>
-                    <input id="scenario" name="scenario" type="text" class="form-control" placeholder="Breve situação ou contexto" />
-                  </div>
+                <div class="mb-3">
+                  <label class="form-label" for="name">Nome <span class="text-danger">*</span></label>
+                  <input id="name" name="name" type="text" class="form-control" placeholder="Nome único do personagem" required />
                 </div>
 
                 <div class="mb-3">
-                  <label class="form-label" for="description">Descrição</label>
-                  <textarea id="description" name="description" class="form-control" placeholder="Descreva o personagem..."></textarea>
+                  <label class="form-label" for="description">Descrição física</label>
+                  <textarea id="description" name="description" class="form-control" placeholder="Aparência e traços físicos do personagem..."></textarea>
                 </div>
 
                 <div class="mb-3">
-                  <label class="form-label" for="first_message">Primeira mensagem</label>
-                  <textarea id="first_message" name="first_message" class="form-control" placeholder="Mensagem inicial do personagem... Use {{user}} para o nome do jogador."></textarea>
-                </div>
-
-                <div class="mb-4">
                   <label class="form-label" for="personality">Personalidade</label>
                   <textarea id="personality" name="personality" class="form-control" placeholder="Como o personagem age e fala..."></textarea>
+                </div>
+
+                <div class="row g-3 mb-4">
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label" for="likes">Gosta de</label>
+                    <textarea id="likes" name="likes" class="form-control" placeholder="Coisas que o personagem aprecia..."></textarea>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label" for="dislikes">Não gosta de</label>
+                    <textarea id="dislikes" name="dislikes" class="form-control" placeholder="Coisas que o personagem detesta..."></textarea>
+                  </div>
                 </div>
 
                 <div class="glass-card card p-3 mb-4" style="border-radius:.85rem !important;">

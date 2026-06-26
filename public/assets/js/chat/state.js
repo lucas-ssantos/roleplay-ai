@@ -1,7 +1,9 @@
-export const characterId = window.location.pathname.split('/')[2];
+// O chat é por conversa: /chat/:conversationId. O personagem é descoberto via a conversa.
+export const conversationId = window.location.pathname.split('/')[2];
 
 export const state = {
   conversationId: null,
+  characterId: null,
   isStreaming: false,
 };
 

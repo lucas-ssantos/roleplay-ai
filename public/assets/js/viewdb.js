@@ -106,13 +106,15 @@ function renderCharacter(ch, conv) {
 
   document.getElementById('char-name').textContent = ch.name;
   const link = document.getElementById('char-link');
-  link.href = `/chat/${ch.id}`;
+  link.href = `/chat/${conv.id}`;
 
   const fields = [
     { label: 'Descrição',      value: ch.description },
     { label: 'Personalidade',  value: ch.personality },
-    { label: 'Cenário',        value: ch.scenario },
-    { label: 'Primeira msg',   value: ch.first_message },
+    { label: 'Gosta de',       value: ch.likes },
+    { label: 'Não gosta de',   value: ch.dislikes },
+    { label: 'Cenário',        value: conv.scenario },
+    { label: 'Primeira msg',   value: conv.first_message },
     { label: 'Conversa',       value: conv.title },
   ];
   document.getElementById('char-fields').innerHTML = fields

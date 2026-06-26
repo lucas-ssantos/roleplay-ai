@@ -2,14 +2,29 @@ import { getDB, saveDB } from "../db.js";
 import { v4 as uuidv4 } from "uuid";
 import { localDatetime } from "../../../utils/datetime.js";
 
-export function createConversation(characterId, userPersona = null, title = null) {
+const CONV_COLUMNS = `id, character_id, user_persona, title, scenario, first_message, created_at, updated_at`;
+
+function mapConversationRow(row) {
+  return {
+    id: row[0],
+    character_id: row[1],
+    user_persona: row[2],
+    title: row[3],
+    scenario: row[4],
+    first_message: row[5],
+    created_at: row[6],
+    updated_at: row[7],
+  };
+}
+
+export function createConversation(characterId, userPersona = null, title = null, scenario = null, firstMessage = null) {
   const db = getDB();
   const id = uuidv4();
   const now = localDatetime();
   db.run(
-    `INSERT INTO conversations (id, character_id, user_persona, title, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [id, characterId, userPersona, title, now, now]
+    `INSERT INTO conversations (id, character_id, user_persona, title, scenario, first_message, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, characterId, userPersona, title, scenario, firstMessage, now, now]
   );
   saveDB();
   return id;
@@ -17,35 +32,44 @@ export function createConversation(characterId, userPersona = null, title = null
 
 export function getConversation(conversationId) {
   const db = getDB();
-  const result = db.exec(`SELECT * FROM conversations WHERE id = ?`, [conversationId]);
-  if (result.length === 0) return null;
-  const row = result[0].values[0];
-  return {
-    id: row[0],
-    character_id: row[1],
-    user_persona: row[2],
-    title: row[3],
-    created_at: row[4],
-    updated_at: row[5],
-  };
+  const result = db.exec(`SELECT ${CONV_COLUMNS} FROM conversations WHERE id = ?`, [conversationId]);
+  if (result.length === 0 || result[0].values.length === 0) return null;
+  return mapConversationRow(result[0].values[0]);
 }
 
 export function getLatestConversationForCharacter(characterId) {
   const db = getDB();
   const result = db.exec(
-    `SELECT * FROM conversations WHERE character_id = ? ORDER BY created_at DESC LIMIT 1`,
+    `SELECT ${CONV_COLUMNS} FROM conversations WHERE character_id = ? ORDER BY created_at DESC LIMIT 1`,
     [characterId]
   );
   if (result.length === 0 || result[0].values.length === 0) return null;
-  const row = result[0].values[0];
-  return {
+  return mapConversationRow(result[0].values[0]);
+}
+
+// Lista todas as conversas de um personagem, mais recentes (por última atividade) primeiro.
+export function getConversationsForCharacter(characterId) {
+  const db = getDB();
+  const result = db.exec(
+    `SELECT conv.id, conv.title, conv.scenario, conv.created_at,
+            COALESCE(MAX(m.created_at), conv.created_at) AS last_activity,
+            COUNT(m.id) AS message_count
+     FROM conversations conv
+     LEFT JOIN messages m ON m.conversation_id = conv.id
+     WHERE conv.character_id = ?
+     GROUP BY conv.id
+     ORDER BY last_activity DESC`,
+    [characterId]
+  );
+  if (result.length === 0) return [];
+  return result[0].values.map((row) => ({
     id: row[0],
-    character_id: row[1],
-    user_persona: row[2],
-    title: row[3],
-    created_at: row[4],
-    updated_at: row[5],
-  };
+    title: row[1],
+    scenario: row[2],
+    created_at: row[3],
+    last_activity: row[4],
+    message_count: row[5],
+  }));
 }
 
 export function getRecentCharactersWithConversations(limit = 5) {

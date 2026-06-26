@@ -30,6 +30,8 @@ function buildBaseSystemPrompt(character, persona, charConfig) {
       : `You are ${character.name}.`,
   ];
   if (character.personality) parts.push(`Personality: ${character.personality}`);
+  if (character.likes)    parts.push(`Likes: ${character.likes}`);
+  if (character.dislikes) parts.push(`Dislikes: ${character.dislikes}`);
   //if (character.scenario) parts.push(`Scenario: ${character.scenario}`);
   if (persona?.name) {
     parts.push(`The user's name is ${persona.name}.${persona.description ? ' ' + persona.description : ''}`);

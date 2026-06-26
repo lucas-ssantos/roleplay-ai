@@ -2,14 +2,30 @@ import { getDB, saveDB } from "../db.js";
 import { v4 as uuidv4 } from "uuid";
 import { localDatetime } from "../../../utils/datetime.js";
 
-export function createCharacter(name, description, personality, avatarUrl = null, scenario = null, firstMessage = null) {
+const CHAR_COLUMNS = `id, name, description, personality, likes, dislikes, avatar_url, created_at, updated_at`;
+
+function mapCharacterRow(row) {
+  return {
+    id: row[0],
+    name: row[1],
+    description: row[2],
+    personality: row[3],
+    likes: row[4],
+    dislikes: row[5],
+    avatar_url: row[6],
+    created_at: row[7],
+    updated_at: row[8],
+  };
+}
+
+export function createCharacter(name, description, personality, avatarUrl = null, likes = null, dislikes = null) {
   const db = getDB();
   const id = uuidv4();
   const now = localDatetime();
   db.run(
-    `INSERT INTO characters (id, name, description, personality, avatar_url, scenario, first_message, created_at, updated_at)
+    `INSERT INTO characters (id, name, description, personality, likes, dislikes, avatar_url, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, name, description, personality, avatarUrl, scenario, firstMessage, now, now]
+    [id, name, description, personality, likes, dislikes, avatarUrl, now, now]
   );
   saveDB();
   return id;
@@ -17,40 +33,19 @@ export function createCharacter(name, description, personality, avatarUrl = null
 
 export function getCharacter(characterId) {
   const db = getDB();
-  const result = db.exec(`SELECT * FROM characters WHERE id = ?`, [characterId]);
-  if (result.length === 0) return null;
-  const row = result[0].values[0];
-  return {
-    id: row[0],
-    name: row[1],
-    description: row[2],
-    personality: row[3],
-    avatar_url: row[4],
-    scenario: row[5],
-    first_message: row[6],
-    created_at: row[7],
-    updated_at: row[8],
-  };
+  const result = db.exec(`SELECT ${CHAR_COLUMNS} FROM characters WHERE id = ?`, [characterId]);
+  if (result.length === 0 || result[0].values.length === 0) return null;
+  return mapCharacterRow(result[0].values[0]);
 }
 
 export function getAllCharacters() {
   const db = getDB();
-  const result = db.exec(`SELECT * FROM characters`);
+  const result = db.exec(`SELECT ${CHAR_COLUMNS} FROM characters`);
   if (result.length === 0) return [];
-  return result[0].values.map((row) => ({
-    id: row[0],
-    name: row[1],
-    description: row[2],
-    personality: row[3],
-    avatar_url: row[4],
-    scenario: row[5],
-    first_message: row[6],
-    created_at: row[7],
-    updated_at: row[8],
-  }));
+  return result[0].values.map(mapCharacterRow);
 }
 
-export function updateCharacter(id, { name, description, personality, avatar_url, scenario, first_message }) {
+export function updateCharacter(id, { name, description, personality, likes, dislikes, avatar_url }) {
   const db = getDB();
   const sets = [];
   const vals = [];
@@ -58,9 +53,9 @@ export function updateCharacter(id, { name, description, personality, avatar_url
   if (name !== undefined)          { sets.push("name = ?");          vals.push(name); }
   if (description !== undefined)   { sets.push("description = ?");   vals.push(description); }
   if (personality !== undefined)   { sets.push("personality = ?");   vals.push(personality); }
+  if (likes !== undefined)         { sets.push("likes = ?");         vals.push(likes); }
+  if (dislikes !== undefined)      { sets.push("dislikes = ?");      vals.push(dislikes); }
   if (avatar_url !== undefined)    { sets.push("avatar_url = ?");    vals.push(avatar_url); }
-  if (scenario !== undefined)      { sets.push("scenario = ?");      vals.push(scenario); }
-  if (first_message !== undefined) { sets.push("first_message = ?"); vals.push(first_message); }
 
   if (sets.length === 0) return false;
   sets.push("updated_at = ?");

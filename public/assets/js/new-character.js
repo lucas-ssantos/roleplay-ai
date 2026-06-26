@@ -29,17 +29,17 @@ async function handleSubmit(event) {
   msgOk.style.display = 'none';
 
   const name        = document.getElementById('name').value.trim();
-  const scenario    = document.getElementById('scenario').value.trim();
   const description = document.getElementById('description').value.trim();
   const personality = document.getElementById('personality').value.trim();
-  const firstMessage = document.getElementById('first_message').value.trim();
+  const likes       = document.getElementById('likes').value.trim();
+  const dislikes    = document.getElementById('dislikes').value.trim();
   const avatarLink  = document.getElementById('avatar_link').value.trim();
   const avatarFile  = document.getElementById('avatar_upload').files[0];
 
   if (!name) { showError('O nome do personagem é obrigatório.'); return; }
   if (!avatarFile && !avatarLink) { showError('Envie uma imagem ou informe um link de avatar.'); return; }
 
-  const body = { name, scenario, description, personality, first_message: firstMessage };
+  const body = { name, description, personality, likes, dislikes };
 
   if (avatarFile) {
     body.avatar_upload   = await readFileAsBase64(avatarFile);
@@ -59,7 +59,7 @@ async function handleSubmit(event) {
     if (!response.ok || !result.ok) throw new Error(result.message || 'Falha ao salvar personagem.');
 
     showSuccess('Personagem criado com sucesso! Redirecionando...');
-    setTimeout(() => { window.location.href = `/chat/${result.id}`; }, 1200);
+    setTimeout(() => { window.location.href = `/character/${result.id}`; }, 1200);
   } catch (err) {
     showError(err.message || 'Erro ao salvar personagem.');
   }

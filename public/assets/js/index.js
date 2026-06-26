@@ -20,7 +20,7 @@ async function loadCharacters() {
             ${thumb}
             <div class="card-body d-flex flex-column gap-2">
               <h5 class="card-title mb-0 fw-semibold">${character.name}</h5>
-              <p class="text-secondary small mb-0" style="line-height:1.5;">${character.scenario || character.description || 'Sem descrição disponível.'}</p>
+              <p class="text-secondary small mb-0" style="line-height:1.5;">${character.description || 'Sem descrição disponível.'}</p>
               <div class="d-flex align-items-center justify-content-between pt-2 mt-1" style="border-top:1px solid rgba(148,163,184,0.1);">
                 <span class="badge-blue">${character.name}</span>
                 <button class="btn-edit-char" title="Editar personagem" data-id="${character.id}">
@@ -32,7 +32,7 @@ async function loadCharacters() {
         `;
 
         col.querySelector('.char-card').addEventListener('click', () => {
-          window.location.href = `/chat/${character.id}`;
+          window.location.href = `/character/${character.id}`;
         });
 
         col.querySelector('.btn-edit-char').addEventListener('click', (e) => {

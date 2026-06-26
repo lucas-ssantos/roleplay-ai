@@ -40,10 +40,10 @@ async function loadCharacter() {
     document.getElementById('subtitle').textContent = `Modificando dados de ${character.name}`;
 
     document.getElementById('name').value          = character.name          || '';
-    document.getElementById('scenario').value      = character.scenario      || '';
     document.getElementById('description').value   = character.description   || '';
-    document.getElementById('first_message').value = character.first_message || '';
     document.getElementById('personality').value   = character.personality   || '';
+    document.getElementById('likes').value         = character.likes         || '';
+    document.getElementById('dislikes').value      = character.dislikes      || '';
 
     if (character.avatar_url) {
       const wrap = document.getElementById('avatar-preview-wrap');
@@ -52,7 +52,7 @@ async function loadCharacter() {
     }
 
     document.getElementById('btn-cancel').addEventListener('click', () => {
-      window.location.href = `/chat/${characterId}`;
+      window.location.href = `/character/${characterId}`;
     });
 
     const allLorebooks  = lbAllRes.ok  ? (await lbAllRes.json()).lorebooks  || [] : [];
@@ -91,16 +91,16 @@ async function handleSubmit(event) {
   msgOk.style.display = 'none';
 
   const name         = document.getElementById('name').value.trim();
-  const scenario     = document.getElementById('scenario').value.trim();
   const description  = document.getElementById('description').value.trim();
   const personality  = document.getElementById('personality').value.trim();
-  const firstMessage = document.getElementById('first_message').value.trim();
+  const likes        = document.getElementById('likes').value.trim();
+  const dislikes     = document.getElementById('dislikes').value.trim();
   const avatarLink   = document.getElementById('avatar_link').value.trim();
   const avatarFile   = document.getElementById('avatar_upload').files[0];
 
   if (!name) { showError('O nome do personagem é obrigatório.'); return; }
 
-  const body = { name, scenario, description, personality, first_message: firstMessage };
+  const body = { name, description, personality, likes, dislikes };
 
   if (avatarFile) {
     body.avatar_upload   = await readFileAsBase64(avatarFile);
@@ -129,7 +129,7 @@ async function handleSubmit(event) {
     if (!charRes.ok || !result.ok) throw new Error(result.message || 'Falha ao salvar alterações.');
 
     showSuccess('Alterações salvas! Redirecionando...');
-    setTimeout(() => { window.location.href = `/chat/${characterId}`; }, 1200);
+    setTimeout(() => { window.location.href = `/character/${characterId}`; }, 1200);
   } catch (err) {
     showError(err.message || 'Erro ao salvar alterações.');
   }

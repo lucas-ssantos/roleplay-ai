@@ -82,8 +82,8 @@ router.get("/api/viewdb/conversation/:id", (req, res) => {
         const db = getDB();
 
         const convRows = db.exec(`
-            SELECT c.id, c.title, c.created_at,
-                   ch.id, ch.name, ch.description, ch.personality, ch.avatar_url, ch.scenario, ch.first_message
+            SELECT c.id, c.title, c.created_at, c.scenario, c.first_message,
+                   ch.id, ch.name, ch.description, ch.personality, ch.likes, ch.dislikes, ch.avatar_url
             FROM conversations c
             JOIN characters ch ON ch.id = c.character_id
             WHERE c.id = '${convId}'
@@ -91,7 +91,7 @@ router.get("/api/viewdb/conversation/:id", (req, res) => {
         if (!convRows.length || !convRows[0].values.length)
             return res.status(404).json({ ok: false, message: "Conversa não encontrada." });
 
-        const [conv_id, title, conv_created, char_id, char_name, description, personality, avatar_url, scenario, first_message] = convRows[0].values[0];
+        const [conv_id, title, conv_created, scenario, first_message, char_id, char_name, description, personality, likes, dislikes, avatar_url] = convRows[0].values[0];
 
         const pRows = db.exec(`SELECT name, description, avatar_url FROM persona WHERE id = 'self'`);
         const persona = pRows.length && pRows[0].values.length
@@ -121,8 +121,8 @@ router.get("/api/viewdb/conversation/:id", (req, res) => {
 
         res.json({
             ok: true,
-            conversation: { id: conv_id, title, created_at: conv_created },
-            character:    { id: char_id, name: char_name, description, personality, avatar_url, scenario, first_message },
+            conversation: { id: conv_id, title, created_at: conv_created, scenario, first_message },
+            character:    { id: char_id, name: char_name, description, personality, likes, dislikes, avatar_url },
             persona,
             messages,
             memories: {
