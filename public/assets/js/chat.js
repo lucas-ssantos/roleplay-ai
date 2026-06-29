@@ -1,5 +1,5 @@
 import { initDomRefs } from './chat/state.js';
-import { initRollbackModal, initEditModal, initResetModal } from './chat/events.js';
+import { initRollbackModal, initEditModal, initResetModal, initRegenerateModal } from './chat/events.js';
 import { init, initImmersiveMode } from './chat/loader.js';
 import { initSelectionMode } from './chat/selection.js';
 import { initConvModelModal } from './chat/model.js';
@@ -10,6 +10,7 @@ window.addEventListener('load', () => {
   initRollbackModal();
   initEditModal();
   initResetModal();
+  initRegenerateModal();
   initSelectionMode();
   initConvModelModal();
   init();

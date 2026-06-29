@@ -20,6 +20,11 @@ let editPendingCallback = null;
 
 let resetModal;
 
+// ── Regenerate state ──────────────────────────────────────────────────
+
+let regenerateModal;
+let regenerateTargetRow = null;
+
 // ── Bubbles ───────────────────────────────────────────────────────────
 
 export function addBubble(role, content, messageId = null) {
@@ -47,7 +52,7 @@ export function addBubble(role, content, messageId = null) {
     regenBtn.title = 'Regenerar resposta';
     regenBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
     regenBtn.style.display = 'none';
-    regenBtn.addEventListener('click', (e) => { e.stopPropagation(); regenerateLastMessage(row); });
+    regenBtn.addEventListener('click', (e) => { e.stopPropagation(); openRegenerateModal(row); });
     actionsEl.appendChild(regenBtn);
   }
 
@@ -208,6 +213,26 @@ export function attachEditBtn(row, messageId) {
 }
 
 // ── Regenerate ────────────────────────────────────────────────────────
+
+function openRegenerateModal(rowEl) {
+  if (state.isStreaming) return;
+  regenerateTargetRow = rowEl;
+  regenerateModal.show();
+}
+
+export function initRegenerateModal() {
+  regenerateModal = new bootstrap.Modal(document.getElementById('regenerateModal'));
+  document.getElementById('regenerate-confirm-btn').addEventListener('click', () => {
+    regenerateModal.hide();
+    if (regenerateTargetRow) {
+      regenerateLastMessage(regenerateTargetRow);
+      regenerateTargetRow = null;
+    }
+  });
+  document.getElementById('regenerateModal').addEventListener('hidden.bs.modal', () => {
+    regenerateTargetRow = null;
+  });
+}
 
 export async function regenerateLastMessage(rowEl) {
   if (state.isStreaming) return;
